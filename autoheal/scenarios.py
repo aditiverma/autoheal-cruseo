@@ -52,11 +52,11 @@ SCENARIOS: dict[str, dict] = {
         "policy": Policy(bounds={
             "lr": (1e-5, 1.0),
             "batch_size": (1, 256),
-            "epochs": (1, 8),          # tight compute budget -> forces replan
+            "epochs": (1, 5),          # tight compute budget -> forces replan
             "grad_clip": (0.1, 10.0),
             "grad_accum": (1, 16),
         }),
-        "note": "epoch ceiling of 8 rejects the agent's large epoch jump.",
+        "note": "epoch ceiling of 5 rejects the agent's larger epoch jump.",
     },
     # Data-preparation OOM (Spark-style): a 4-partition job whose per-executor
     # working set (~1.2GB) exceeds the configured 512MB executor memory limit.

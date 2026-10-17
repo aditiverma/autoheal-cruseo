@@ -1,51 +1,55 @@
 {
-  "run_id": "run_6598a88598",
+  "run_id": "run_604e0ebb13",
   "goal": "Prepare training data and train a validated PyTorch classifier.",
   "status": "complete",
   "done_definition": {
     "goal": "Prepare training data and train a validated PyTorch classifier.",
     "checks": [
       {
-        "name": "training_process_success",
-        "kind": "process_success",
-        "detail": "",
-        "metric": null,
-        "op": null,
-        "threshold": null
-      },
-      {
-        "name": "checkpoint_exists_and_loadable",
-        "kind": "checkpoint_loadable",
-        "detail": "Model checkpoint file at ./model.pt can be loaded with torch.load",
-        "metric": null,
-        "op": null,
-        "threshold": null
-      },
-      {
-        "name": "validation_accuracy_threshold",
+        "name": "val_accuracy_meets_floor",
         "kind": "metric_threshold",
         "detail": "",
+        "artifact": null,
         "metric": "val_accuracy",
         "op": ">=",
         "threshold": 0.9
       },
       {
-        "name": "final_train_loss_threshold",
+        "name": "final_train_loss_below_threshold",
         "kind": "metric_threshold",
         "detail": "",
+        "artifact": null,
         "metric": "final_train_loss",
         "op": "<=",
-        "threshold": 0.2
+        "threshold": 0.5
+      },
+      {
+        "name": "training process exits successfully",
+        "kind": "process_success",
+        "detail": "",
+        "artifact": null,
+        "metric": null,
+        "op": null,
+        "threshold": null
+      },
+      {
+        "name": "model checkpoint is loadable",
+        "kind": "checkpoint_loadable",
+        "detail": "",
+        "artifact": null,
+        "metric": null,
+        "op": null,
+        "threshold": null
       }
     ],
-    "rationale": "Ensures training succeeded, model is saved and loadable, and achieves sufficient validation accuracy while keeping training loss low. [reconciled against trusted minimum spec]"
+    "rationale": "Ensures training completed, model saved and usable, and performance meets minimum standards. [reconciled against trusted minimum spec]"
   },
-  "created_at": 1792265124.725431,
-  "updated_at": 1792265162.8615239,
+  "created_at": 1792270285.870016,
+  "updated_at": 1792270339.622745,
   "attempts": [
     {
-      "attempt_id": "run_6598a88598-a1",
-      "run_id": "run_6598a88598",
+      "attempt_id": "run_604e0ebb13-a1",
+      "run_id": "run_604e0ebb13",
       "n": 1,
       "kind": "execute",
       "config": {
@@ -65,7 +69,7 @@
       "evidence": {
         "succeeded": false,
         "exit_code": 1,
-        "duration_s": 1.3041460514068604,
+        "duration_s": 1.678467035293579,
         "stdout_tail": "[train] starting lr=5.0 batch_size=64 epochs=20 grad_clip=None grad_accum=1\n[train] epoch=0 train_loss=552914.0625\n[train] epoch=1 train_loss=3454912768.0000\n[train] epoch=2 train_loss=3203256703223070720.0000\n[train] epoch=3 train_loss=139449782187206790088165949440.0000\n[train] FATAL: loss diverged to NaN/Inf at epoch=4 step=224 (lr=5.0). Gradients exploded.\n[train] METRICS={\"status\": \"diverged\", \"epochs_run\": 4, \"diverged_at_step\": 224, \"lr\": 5.0}\n",
         "stderr_tail": "",
         "metrics": {
@@ -75,8 +79,8 @@
           "lr": 5.0
         },
         "artifacts": {
-          "metrics.json": "/Users/aditi/autoheal-cruseo/artifacts/run_6598a88598-a1/metrics.json",
-          "config.json": "/Users/aditi/autoheal-cruseo/artifacts/run_6598a88598-a1/config.json"
+          "config.json": "/Users/aditi/autoheal-cruseo/artifacts/run_604e0ebb13-a1/config.json",
+          "metrics.json": "/Users/aditi/autoheal-cruseo/artifacts/run_604e0ebb13-a1/metrics.json"
         }
       },
       "diagnosis": null,
@@ -85,43 +89,43 @@
       "policy": null,
       "verification": null,
       "note": null,
-      "created_at": 1792265138.127583
+      "created_at": 1792270307.786583
     },
     {
-      "attempt_id": "run_6598a88598-a2",
-      "run_id": "run_6598a88598",
+      "attempt_id": "run_604e0ebb13-a2",
+      "run_id": "run_604e0ebb13",
       "n": 2,
       "kind": "approved_plan",
       "config": null,
       "evidence": null,
       "diagnosis": {
         "failure_class": "LR_DIVERGENCE",
-        "root_cause": "Learning rate set too high (5.0) without gradient clipping, causing gradient explosion and loss divergence.",
-        "reasoning": "The training log shows an initial learning rate of 5.0, loss values growing astronomically from epoch 0 onward, and a fatal divergence at step 224 with the message 'Gradients exploded.' The configuration indicates grad_clip=None, so no mechanism was in place to mitigate large updates. This pattern is characteristic of an excessively large learning rate leading to unstable gradients.",
+        "root_cause": "Learning rate set excessively high (5.0) without gradient clipping, causing exploding gradients and loss divergence.",
+        "reasoning": "The training log shows loss growing from ~5.5e5 to astronomical values within a few epochs, culminating in NaN/Inf at epoch 4 step 224. The configuration indicates grad_clip=None and grad_accum=1, so no mechanism to temper the large updates induced by the high LR. This pattern is characteristic of learning\u2011rate\u2011induced divergence.",
         "confidence": 0.95,
         "evidence_cited": [
+          "metrics={'lr': 5.0}",
           "[train] starting lr=5.0 batch_size=64 epochs=20 grad_clip=None grad_accum=1",
           "[train] epoch=0 train_loss=552914.0625",
           "[train] epoch=1 train_loss=3454912768.0000",
           "[train] epoch=2 train_loss=3203256703223070720.0000",
           "[train] epoch=3 train_loss=139449782187206790088165949440.0000",
-          "[train] FATAL: loss diverged to NaN/Inf at epoch=4 step=224 (lr=5.0). Gradients exploded.",
-          "[train] METRICS={\"status\": \"diverged\", \"epochs_run\": 4, \"diverged_at_step\": 224, \"lr\": 5.0}"
+          "[train] FATAL: loss diverged to NaN/Inf at epoch=4 step=224 (lr=5.0). Gradients exploded."
         ]
       },
       "proposal": {
         "action": "set_learning_rate",
         "parameter": "lr",
         "old_value": 5.0,
-        "new_value": 0.1,
-        "reason": "Learning rate too high causing gradient explosion; reduce to a stable value to prevent divergence."
+        "new_value": 0.01,
+        "reason": "Reduce learning rate from excessively high value to prevent exploding gradients and loss divergence."
       },
       "safety": {
         "verdict": "allow",
         "risk_level": "low",
         "prompt_injection_detected": false,
         "concerns": [],
-        "reasoning": "No prompt injection detected; the proposed learning rate reduction is a standard corrective measure for gradient explosion and does not constitute an out\u2011of\u2011character or unusually risky change."
+        "reasoning": "The proposed learning rate reduction addresses the observed divergence and is a standard corrective measure; no manipulative instructions are present in the logs."
       },
       "policy": {
         "allowed": true,
@@ -130,15 +134,15 @@
       },
       "verification": null,
       "note": null,
-      "created_at": 1792265160.8405252
+      "created_at": 1792270337.273439
     },
     {
-      "attempt_id": "run_6598a88598-a3",
-      "run_id": "run_6598a88598",
+      "attempt_id": "run_604e0ebb13-a3",
+      "run_id": "run_604e0ebb13",
       "n": 3,
       "kind": "execute_verified",
       "config": {
-        "lr": 0.1,
+        "lr": 0.01,
         "batch_size": 64,
         "epochs": 20,
         "grad_clip": null,
@@ -154,20 +158,20 @@
       "evidence": {
         "succeeded": true,
         "exit_code": 0,
-        "duration_s": 1.5198428630828857,
-        "stdout_tail": "[train] starting lr=0.1 batch_size=64 epochs=20 grad_clip=None grad_accum=1\n[train] epoch=0 train_loss=0.1749\n[train] epoch=1 train_loss=0.1049\n[train] epoch=2 train_loss=0.0820\n[train] epoch=3 train_loss=0.0712\n[train] epoch=4 train_loss=0.0644\n[train] epoch=5 train_loss=0.0598\n[train] epoch=6 train_loss=0.0564\n[train] epoch=7 train_loss=0.0538\n[train] epoch=8 train_loss=0.0520\n[train] epoch=9 train_loss=0.0507\n[train] epoch=10 train_loss=0.0485\n[train] epoch=11 train_loss=0.0490\n[train] epoch=12 train_loss=0.0461\n[train] epoch=13 train_loss=0.0461\n[train] epoch=14 train_loss=0.0441\n[train] epoch=15 train_loss=0.0437\n[train] epoch=16 train_loss=0.0424\n[train] epoch=17 train_loss=0.0415\n[train] epoch=18 train_loss=0.0407\n[train] epoch=19 train_loss=0.0400\n[train] done val_accuracy=0.9837\n[train] METRICS={\"status\": \"completed\", \"epochs_run\": 20, \"val_accuracy\": 0.9837, \"final_train_loss\": 0.04, \"lr\": 0.1}\n",
+        "duration_s": 1.87245512008667,
+        "stdout_tail": "[train] starting lr=0.01 batch_size=64 epochs=20 grad_clip=None grad_accum=1\n[train] epoch=0 train_loss=1.1532\n[train] epoch=1 train_loss=0.7708\n[train] epoch=2 train_loss=0.5523\n[train] epoch=3 train_loss=0.4217\n[train] epoch=4 train_loss=0.3392\n[train] epoch=5 train_loss=0.2839\n[train] epoch=6 train_loss=0.2449\n[train] epoch=7 train_loss=0.2162\n[train] epoch=8 train_loss=0.1943\n[train] epoch=9 train_loss=0.1771\n[train] epoch=10 train_loss=0.1633\n[train] epoch=11 train_loss=0.1520\n[train] epoch=12 train_loss=0.1426\n[train] epoch=13 train_loss=0.1347\n[train] epoch=14 train_loss=0.1278\n[train] epoch=15 train_loss=0.1220\n[train] epoch=16 train_loss=0.1168\n[train] epoch=17 train_loss=0.1122\n[train] epoch=18 train_loss=0.1082\n[train] epoch=19 train_loss=0.1046\n[train] done val_accuracy=0.9737\n[train] METRICS={\"status\": \"completed\", \"epochs_run\": 20, \"val_accuracy\": 0.9737, \"final_train_loss\": 0.1046, \"lr\": 0.01}\n",
         "stderr_tail": "",
         "metrics": {
           "status": "completed",
           "epochs_run": 20,
-          "val_accuracy": 0.9837,
-          "final_train_loss": 0.04,
-          "lr": 0.1
+          "val_accuracy": 0.9737,
+          "final_train_loss": 0.1046,
+          "lr": 0.01
         },
         "artifacts": {
-          "model.pt": "/Users/aditi/autoheal-cruseo/artifacts/run_6598a88598-a3/model.pt",
-          "metrics.json": "/Users/aditi/autoheal-cruseo/artifacts/run_6598a88598-a3/metrics.json",
-          "config.json": "/Users/aditi/autoheal-cruseo/artifacts/run_6598a88598-a3/config.json"
+          "config.json": "/Users/aditi/autoheal-cruseo/artifacts/run_604e0ebb13-a3/config.json",
+          "metrics.json": "/Users/aditi/autoheal-cruseo/artifacts/run_604e0ebb13-a3/metrics.json",
+          "model.pt": "/Users/aditi/autoheal-cruseo/artifacts/run_604e0ebb13-a3/model.pt"
         }
       },
       "diagnosis": null,
@@ -178,29 +182,70 @@
         "passed": true,
         "checks": [
           {
-            "name": "training_process_success",
+            "name": "val_accuracy_meets_floor",
+            "passed": true,
+            "detail": "val_accuracy=0.9737 >= 0.9"
+          },
+          {
+            "name": "final_train_loss_below_threshold",
+            "passed": true,
+            "detail": "final_train_loss=0.1046 <= 0.5"
+          },
+          {
+            "name": "training process exits successfully",
             "passed": true,
             "detail": "exit_code=0"
           },
           {
-            "name": "checkpoint_exists_and_loadable",
+            "name": "model checkpoint is loadable",
             "passed": true,
-            "detail": "loaded /Users/aditi/autoheal-cruseo/artifacts/run_6598a88598-a3/model.pt"
-          },
-          {
-            "name": "validation_accuracy_threshold",
-            "passed": true,
-            "detail": "val_accuracy=0.9837 >= 0.9"
-          },
-          {
-            "name": "final_train_loss_threshold",
-            "passed": true,
-            "detail": "final_train_loss=0.04 <= 0.2"
+            "detail": "loaded /Users/aditi/autoheal-cruseo/artifacts/run_604e0ebb13-a3/model.pt"
           }
         ]
       },
       "note": null,
-      "created_at": 1792265162.860441
+      "created_at": 1792270339.622117
     }
-  ]
+  ],
+  "authorization_grant": {
+    "principal": "autoheal-agent",
+    "namespace": "team-ml",
+    "allowed_actions": [
+      "set_batch_size",
+      "set_epochs",
+      "set_grad_accum",
+      "set_grad_clip",
+      "set_learning_rate"
+    ],
+    "quotas": {
+      "lr": [
+        1e-05,
+        1.0
+      ],
+      "batch_size": [
+        1,
+        256
+      ],
+      "epochs": [
+        1,
+        20
+      ],
+      "grad_clip": [
+        0.1,
+        10.0
+      ],
+      "grad_accum": [
+        1,
+        16
+      ]
+    },
+    "default_deny": true,
+    "denied": [
+      "delete resources",
+      "read secrets",
+      "modify its own policy/guardrails",
+      "act outside its namespace",
+      "escalate its own permissions"
+    ]
+  }
 }

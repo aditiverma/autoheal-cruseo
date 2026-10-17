@@ -1,5 +1,5 @@
 {
-  "run_id": "run_7747b98899",
+  "run_id": "run_7722e59d9e",
   "goal": "Prepare a validated training dataset from the raw input.",
   "status": "complete",
   "done_definition": {
@@ -11,8 +11,8 @@
         "detail": "",
         "artifact": null,
         "metric": "rows_out",
-        "op": ">=",
-        "threshold": 1.0
+        "op": ">",
+        "threshold": 0.0
       },
       {
         "name": "n_partitions_at_least_one",
@@ -60,14 +60,14 @@
         "threshold": null
       }
     ],
-    "rationale": "Ensures the data preparation step runs successfully, produces an artifact that can be loaded and contains data, and respects basic resource constraints. [reconciled against trusted minimum spec]"
+    "rationale": "Ensures the preparation step ran successfully, produced the expected artifact, the artifact can be loaded and contains data, and basic resource usage metrics are within sane bounds. [reconciled against trusted minimum spec]"
   },
-  "created_at": 1792267142.644066,
-  "updated_at": 1792267179.3218439,
+  "created_at": 1792270402.378297,
+  "updated_at": 1792270461.168276,
   "attempts": [
     {
-      "attempt_id": "run_7747b98899-a1",
-      "run_id": "run_7747b98899",
+      "attempt_id": "run_7722e59d9e-a1",
+      "run_id": "run_7722e59d9e",
       "n": 1,
       "kind": "execute",
       "config": {
@@ -81,7 +81,7 @@
       "evidence": {
         "succeeded": false,
         "exit_code": 1,
-        "duration_s": 0.0759890079498291,
+        "duration_s": 0.07646679878234863,
         "stdout_tail": "[dataprep] input_rows=200000 partitions=4 per_partition_rows=50000\n[dataprep] estimated per-executor working set=1229MB limit=512MB\n[dataprep] FATAL: executor OutOfMemory \u2014 a partition needs ~1229MB but the executor memory limit is 512MB. Increase executor memory or repartition (more partitions) to shrink the per-partition working set.\n[dataprep] METRICS={\"status\": \"executor_oom\", \"peak_mem_mb\": 1229, \"executor_memory_mb\": 512, \"n_partitions\": 4, \"rows_out\": 0}\n",
         "stderr_tail": "",
         "metrics": {
@@ -92,8 +92,8 @@
           "rows_out": 0
         },
         "artifacts": {
-          "config.json": "/Users/aditi/autoheal-cruseo/artifacts/run_7747b98899-a1/config.json",
-          "metrics.json": "/Users/aditi/autoheal-cruseo/artifacts/run_7747b98899-a1/metrics.json"
+          "config.json": "/Users/aditi/autoheal-cruseo/artifacts/run_7722e59d9e-a1/config.json",
+          "metrics.json": "/Users/aditi/autoheal-cruseo/artifacts/run_7722e59d9e-a1/metrics.json"
         }
       },
       "diagnosis": null,
@@ -102,11 +102,11 @@
       "policy": null,
       "verification": null,
       "note": null,
-      "created_at": 1792267158.11108
+      "created_at": 1792270422.4291341
     },
     {
-      "attempt_id": "run_7747b98899-a2",
-      "run_id": "run_7747b98899",
+      "attempt_id": "run_7722e59d9e-a2",
+      "run_id": "run_7722e59d9e",
       "n": 2,
       "kind": "approved_plan",
       "config": null,
@@ -114,9 +114,10 @@
       "diagnosis": {
         "failure_class": "EXECUTOR_OOM",
         "root_cause": "Executor memory limit (512\u202fMB) is insufficient for the per-partition working set (~1229\u202fMB) caused by too few partitions (4) on 200\u202fk rows.",
-        "reasoning": "The log shows '[dataprep] estimated per-executor working set=1229MB limit=512MB' and '[dataprep] FATAL: executor OutOfMemory \u2014 a partition needs ~1229MB but the executor memory limit is 512MB.' Metrics confirm peak_mem_mb=1229 exceeding executor_memory_mb=512 with n_partitions=4 and rows_out=0, indicating the OOM caused the failure.",
+        "reasoning": "The log shows '[dataprep] estimated per-executor working set=1229MB limit=512MB' and '[dataprep] FATAL: executor OutOfMemory \u2014 a partition needs ~1229MB but the executor memory limit is 512MB.' The metrics confirm peak_mem_mb=1229 exceeding executor_memory_mb=512 with n_partitions=4, leading to zero rows output. Increasing executor memory or repartitioning to more partitions would reduce per-partition size and avoid OOM.",
         "confidence": 0.95,
         "evidence_cited": [
+          "[dataprep] input_rows=200000 partitions=4 per_partition_rows=50000",
           "[dataprep] estimated per-executor working set=1229MB limit=512MB",
           "[dataprep] FATAL: executor OutOfMemory \u2014 a partition needs ~1229MB but the executor memory limit is 512MB.",
           "metrics={'status': 'executor_oom', 'peak_mem_mb': 1229, 'executor_memory_mb': 512, 'n_partitions': 4, 'rows_out': 0}"
@@ -127,14 +128,14 @@
         "parameter": "n_partitions",
         "old_value": 4,
         "new_value": 10,
-        "reason": "Increase number of partitions to reduce per-partition working set below the executor memory limit of 512 MB, addressing the OOM caused by insufficient partitions."
+        "reason": "Increase partitions to reduce per-partition working set below the executor memory limit of 512 MB, addressing the OOM caused by insufficient partitions."
       },
       "safety": {
         "verdict": "allow",
         "risk_level": "low",
         "prompt_injection_detected": false,
         "concerns": [],
-        "reasoning": "The logs show an OOM caused by a partition exceeding the 512\u202fMB executor memory limit. Raising n_partitions from 4 to 10 is a standard corrective step to shrink the per\u2011partition working set and prevent the OOM. No manipulative or suspicious instructions are present in the logs, and the proposed change aligns with typical training\u2011hyperparameter adjustments, posing minimal risk."
+        "reasoning": "The logs contain no manipulative or suspicious instructions; the proposed increase in partitions is a standard, appropriate remedy to avoid executor OOM and is not unusually risky for a training hyperparameter adjustment."
       },
       "policy": {
         "allowed": true,
@@ -143,11 +144,11 @@
       },
       "verification": null,
       "note": null,
-      "created_at": 1792267179.189586
+      "created_at": 1792270460.988609
     },
     {
-      "attempt_id": "run_7747b98899-a3",
-      "run_id": "run_7747b98899",
+      "attempt_id": "run_7722e59d9e-a3",
+      "run_id": "run_7722e59d9e",
       "n": 3,
       "kind": "execute_verified",
       "config": {
@@ -161,7 +162,7 @@
       "evidence": {
         "succeeded": true,
         "exit_code": 0,
-        "duration_s": 0.10567116737365723,
+        "duration_s": 0.15080499649047852,
         "stdout_tail": "[dataprep] input_rows=200000 partitions=10 per_partition_rows=20000\n[dataprep] estimated per-executor working set=492MB limit=512MB\n[dataprep] done rows_out=200000 partitions=10\n[dataprep] METRICS={\"status\": \"completed\", \"rows_out\": 200000, \"n_partitions\": 10, \"peak_mem_mb\": 492, \"features\": 16}\n",
         "stderr_tail": "",
         "metrics": {
@@ -172,9 +173,9 @@
           "features": 16
         },
         "artifacts": {
-          "config.json": "/Users/aditi/autoheal-cruseo/artifacts/run_7747b98899-a3/config.json",
-          "dataset.npz": "/Users/aditi/autoheal-cruseo/artifacts/run_7747b98899-a3/dataset.npz",
-          "metrics.json": "/Users/aditi/autoheal-cruseo/artifacts/run_7747b98899-a3/metrics.json"
+          "config.json": "/Users/aditi/autoheal-cruseo/artifacts/run_7722e59d9e-a3/config.json",
+          "dataset.npz": "/Users/aditi/autoheal-cruseo/artifacts/run_7722e59d9e-a3/dataset.npz",
+          "metrics.json": "/Users/aditi/autoheal-cruseo/artifacts/run_7722e59d9e-a3/metrics.json"
         }
       },
       "diagnosis": null,
@@ -187,7 +188,7 @@
           {
             "name": "rows_out_positive",
             "passed": true,
-            "detail": "rows_out=200000 >= 1.0"
+            "detail": "rows_out=200000 > 0.0"
           },
           {
             "name": "n_partitions_at_least_one",
@@ -217,7 +218,33 @@
         ]
       },
       "note": null,
-      "created_at": 1792267179.3213
+      "created_at": 1792270461.167619
     }
-  ]
+  ],
+  "authorization_grant": {
+    "principal": "autoheal-agent",
+    "namespace": "team-ml",
+    "allowed_actions": [
+      "set_executor_memory",
+      "set_partitions"
+    ],
+    "quotas": {
+      "executor_memory_mb": [
+        256,
+        2048
+      ],
+      "n_partitions": [
+        1,
+        256
+      ]
+    },
+    "default_deny": true,
+    "denied": [
+      "delete resources",
+      "read secrets",
+      "modify its own policy/guardrails",
+      "act outside its namespace",
+      "escalate its own permissions"
+    ]
+  }
 }

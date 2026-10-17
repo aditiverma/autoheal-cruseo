@@ -42,6 +42,14 @@ def make_narrator():
         if event == "run_start":
             _p(f"\n\033[1m● AutoHeal run {data['run_id']}\033[0m")
             _p(f"  goal: {data['goal']}")
+        elif event == "grant":
+            g = data["grant"]
+            _p(f"\n\033[1m⛿ Agent authorization grant\033[0m "
+               f"(least-privilege, default-deny)")
+            _p(f"    principal: {g['principal']}   namespace: {g['namespace']}")
+            _p(f"    may propose: {g['allowed_actions']}")
+            _p(f"    quotas: {g['quotas']}")
+            _p(f"    \033[31mdenied (structurally impossible): {g['denied']}\033[0m")
         elif event == "definition_of_done":
             _p("\n\033[1m◆ Definition of Done\033[0m (reconciled vs trusted minimum)")
             for c in data["done"]["checks"]:
@@ -140,7 +148,9 @@ def cmd_run(args) -> int:
     result = sup.run_goal(scenario["goal"], scenario["config"])
 
     trace_path = ROOT / "runs" / f"{result['run_id']}.json"
-    trace_path.write_text(json.dumps(store.export_trace(result["run_id"]), indent=2))
+    trace = store.export_trace(result["run_id"])
+    trace["authorization_grant"] = policy.grant()
+    trace_path.write_text(json.dumps(trace, indent=2))
     _p(f"\n\033[2mtrace written to {trace_path}\033[0m")
     _p(f"\033[2mreplay with: python main.py trace {result['run_id']}\033[0m")
     return 0 if result["status"] == "complete" else 1

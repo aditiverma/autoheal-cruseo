@@ -178,6 +178,41 @@ attempts, lower mean-time-to-recovery, lower inference cost) — this is genuine
 interfaces: the optimizer is another executor+verifier pass; the playbook is
 another input to the planner.
 
+## Agent authorization (the security model)
+
+The security question behind "can an AI agent operate Kubernetes safely" is
+*authorization*, not just input validation. AutoHeal's answer:
+
+**The agent holds no cluster credentials.** It cannot call any infrastructure
+API. It only *proposes* desired-state changes; a deterministic control plane
+(the policy engine here; a controller with its own ServiceAccount in the full
+architecture) decides what is admissible and executes it. A hallucinating or
+compromised agent can emit nothing but proposals, which the gate filters — so
+the model is never a principal that can act on infrastructure.
+
+The agent's effective permissions are a **default-deny capability grant**: only
+allowlisted actions ("verbs") within quotas are possible; everything else is
+structurally impossible. The grant is printed at the start of every run.
+
+Mapping the local policy engine to Kubernetes primitives:
+
+| AutoHeal (`engine/policy.py`) | Kubernetes equivalent |
+|---|---|
+| `principal`, `namespace` | ServiceAccount, namespace scope (never cluster-wide) |
+| `allowed_actions` (default-deny) | Role verbs on specific resources/CRDs |
+| `bounds` (parameter ranges) | ResourceQuota / LimitRange |
+| `denied` capabilities | absence of `delete`/`secrets`/RBAC verbs in the Role |
+| `max_attempts`, `max_rejections` | admission/rate controls, blast-radius limits |
+| escalation on `safety_escalation` | human approval tier for higher-risk verbs |
+
+Least-privilege Role for the executing **controller** (not the agent — the agent
+has none): namespace-scoped; `get/list/watch` on pods/jobs/logs/events;
+`create/patch` only on the workload CRDs it owns (`TrainJob`,
+`SparkApplication`); **no** `delete` on arbitrary resources, no `Secrets` access,
+no RBAC objects (no self-escalation), no nodes/PV/control-plane, no cross-
+namespace, no `pods/exec`; bounded by ResourceQuota, NetworkPolicy, and
+restricted Pod Security Standards.
+
 ## Mapping to the KubeCon architecture
 
 The hackathon prototype runs the workload locally via a subprocess executor. The

@@ -58,6 +58,7 @@ class Supervisor:
     def run_goal(self, goal: str, start_config: TrainConfig) -> dict:
         run_id = self.store.create_run(goal)
         self.narrate("run_start", {"run_id": run_id, "goal": goal})
+        self.narrate("grant", {"grant": self.policy.grant()})
 
         done = self.dod.define(goal)
         self.store.set_done_definition(run_id, done.model_dump_json())
