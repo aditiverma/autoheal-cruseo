@@ -169,7 +169,7 @@ no RBAC objects (no self-escalation), no nodes/PV/control-plane, no cross-
 namespace, no `pods/exec`; bounded by ResourceQuota, NetworkPolicy, and
 restricted Pod Security Standards.
 
-## Mapping to the KubeCon architecture
+## Mapping to a Kubernetes backend
 
 The hackathon prototype runs the workload locally via a subprocess executor. The
 same agent logic is designed to drive a Kubernetes backend by reimplementing

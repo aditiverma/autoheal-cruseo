@@ -62,7 +62,7 @@ SCENARIOS: dict[str, dict] = {
     # working set (~1.2GB) exceeds the configured 512MB executor memory limit.
     # The agent must raise executor memory (bounded by the 2GB node max -> can be
     # rejected) or repartition to shrink the per-partition working set. Mirrors
-    # the KubeCon abstract's "adjusting resources after an OOM failure".
+    # the classic distributed data-prep remedy: adjusting resources after OOM.
     "dataprep_oom": {
         "goal": DATAPREP_GOAL,
         "config": DataPrepConfig(input_rows=200_000, row_bytes=8192,

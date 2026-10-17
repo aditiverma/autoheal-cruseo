@@ -3,8 +3,8 @@
 Models a distributed data-prep stage (as the Kubeflow Spark Operator would run
 it): the data is split into partitions, and each executor has a configured
 memory limit. If a partition's working set exceeds that limit, the executor is
-OutOfMemory-killed and the job fails — exactly the failure the KubeCon abstract
-calls out ("adjusting resources after an OOM failure").
+OutOfMemory-killed and the job fails — the classic distributed data-prep
+failure that is remedied by adjusting resources after an OOM.
 
 What is real: the resource-budget enforcement and the two remedies (raise
 executor memory, or repartition to shrink the per-partition working set), plus

@@ -10,7 +10,7 @@ actions, and this gate (the control plane's job, not the model's) decides what
 is admissible. The grant is **default-deny**: only the allowlisted actions
 within quota are possible; everything else (deleting resources, reading secrets,
 editing this policy, acting outside the namespace) is structurally impossible,
-not merely discouraged. In the KubeCon architecture this is where a controller's
+not merely discouraged. In a Kubernetes deployment this is where a controller's
 ServiceAccount/Role, ResourceQuota, and admission control live.
 """
 from __future__ import annotations
