@@ -11,45 +11,7 @@ Nemotron proposes, deterministic policy authorizes, and the independent verifier
 determines completion. The loop handles policy rejection, verification failure,
 replanning, and bounded execution:
 
-```mermaid
----
-title: AutoHeal Recursive Recovery and Verification
----
-flowchart TD
-    A["Execute ML workload"]
-    B["Collect logs, metrics, and artifacts"]
-    C{"Independent verification passes?"}
-    D["Goal complete"]
-    E["Nemotron diagnoses failure"]
-    F["Propose next experiment / remediation"]
-    G{"Policy allows change?"}
-    H["Record rejection and replan"]
-    I["Apply approved change and retry"]
-    J["Record failed experiment"]
-    K{"Budget remaining?"}
-    L["Stop and escalate"]
-
-    A --> B --> C
-    C -->|"Yes — all criteria met"| D
-    C -->|"No"| E
-    E --> F --> G
-    G -->|"Rejected"| H --> K
-    G -->|"Approved"| I --> A
-    C -.->|"Verification evidence"| J
-    J --> K
-    K -->|"Yes — revise strategy"| E
-    K -->|"No"| L
-
-    classDef reasoning fill:#e9efff,stroke:#6381c5,color:#172554
-    classDef policy fill:#fff1d6,stroke:#c58b28,color:#744210
-    classDef success fill:#dcf3e6,stroke:#26865b,color:#14532d
-    classDef failure fill:#fbe9e7,stroke:#b65d53,color:#7f1d1d
-
-    class E,F,H,J reasoning
-    class G,K policy
-    class D success
-    class L failure
-```
+![AutoHeal recursive recovery and verification](../autoheal/images/autoheal-recovery.svg)
 
 ### System architecture
 
@@ -57,75 +19,7 @@ The agent reasons on Crusoe/Nemotron and only *proposes*; a deterministic safety
 boundary decides what executes, and an independent verifier decides when the
 goal is actually done. One supervisor loop drives both workload types.
 
-```mermaid
----
-title: AutoHeal System Architecture
----
-flowchart TB
-    GOAL["USER GOAL<br/>Train a model and satisfy acceptance criteria"]
-
-    subgraph CONTROL["RECURSIVE SUPERVISOR — Local Python"]
-        direction TB
-        SUP["Goal tracking · Execution history<br/>Retry budget · Replanning"]
-
-        subgraph CRUSOE["CRUSOE MANAGED INFERENCE — Nemotron"]
-            direction LR
-            DIAG["Diagnose<br/>Why did it fail?"]
-            PLAN["Plan<br/>What should change?"]
-            SAFE["Safety Review<br/>Advisory risk assessment"]
-        end
-
-        MEM[("SQLite Recovery History")]
-        SUP <--> MEM
-        SUP <--> DIAG
-        DIAG --> PLAN --> SAFE
-    end
-
-    subgraph POLICY["DETERMINISTIC SAFETY BOUNDARY"]
-        direction TB
-        GATE{"Policy Gate"}
-        LIMITS["Allowed actions · Parameter bounds<br/>Retry limits"]
-        LIMITS --> GATE
-    end
-
-    subgraph WORKLOAD["ML WORKLOAD EXECUTION — Local"]
-        direction LR
-        EXEC["Approved Workload Executor"]
-        TRAIN["PyTorch Training"]
-        DATA["Data Preparation"]
-        EXEC --> TRAIN
-        EXEC --> DATA
-    end
-
-    VERIFY["INDEPENDENT VERIFIER<br/>Reload checkpoint · Check metrics<br/>Evaluate trusted acceptance criteria"]
-
-    DONE["GOAL VERIFIED — COMPLETE"]
-    STOP["Stop / Escalate"]
-
-    GOAL --> SUP
-    SAFE -->|"Proposed remediation"| GATE
-    GATE -->|"Approved"| EXEC
-    GATE -.->|"Rejected + reason"| SUP
-    TRAIN --> VERIFY
-    DATA --> VERIFY
-    VERIFY -->|"All checks pass"| DONE
-    VERIFY -.->|"Checks fail + evidence"| SUP
-    SUP -.->|"Budget exhausted"| STOP
-
-    classDef goal fill:#e8edf4,stroke:#667085,color:#172033
-    classDef agent fill:#e9efff,stroke:#6381c5,color:#172554
-    classDef policy fill:#fff1d6,stroke:#c58b28,color:#744210
-    classDef workload fill:#f2f3f5,stroke:#8a929f,color:#252a34
-    classDef verifier fill:#dcf3e6,stroke:#26865b,color:#14532d
-    classDef stop fill:#fbe9e7,stroke:#b65d53,color:#7f1d1d
-
-    class GOAL,SUP,MEM goal
-    class DIAG,PLAN,SAFE agent
-    class GATE,LIMITS policy
-    class EXEC,TRAIN,DATA workload
-    class VERIFY,DONE verifier
-    class STOP stop
-```
+![AutoHeal system architecture](../autoheal/images/autoheal-architecture.svg)
 
 ## Separation of concerns
 
