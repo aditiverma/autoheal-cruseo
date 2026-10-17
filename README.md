@@ -56,7 +56,7 @@ graph TB
 Amber = LLM reasoning (advisory). Green = deterministic gates (binding).
 
 This is **reason → act → observe → verify → re-plan**, not a fixed retry loop.
-The component and trust-boundary diagram is in [Architecture](#architecture) below.
+The full system architecture diagram is in [Architecture](#architecture) below.
 
 ## Why it's not just a retry loop or a Kubernetes operator
 
@@ -147,43 +147,70 @@ what action is allowed, and whether the goal is actually done — are
 deterministic local code.
 
 ```mermaid
-graph TB
-    Sup[Recursive Supervisor<br/>owns goal · budgets · escalation]
+flowchart TB
+    GOAL["USER GOAL<br/>Train a model and satisfy acceptance criteria"]
 
-    subgraph reason["Reasoning agents — Crusoe/Nemotron · advisory"]
-        DoDA[Acceptance criteria]
-        DiagA[Diagnostician]
-        PlanA[Remediation planner]
-        SafeA[Safety reviewer]
+    subgraph CONTROL["RECURSIVE SUPERVISOR — Local Python"]
+        direction TB
+        SUP["Goal tracking · Execution history<br/>Retry budget · Replanning"]
+
+        subgraph CRUSOE["CRUSOE MANAGED INFERENCE — Nemotron"]
+            direction LR
+            DIAG["Diagnose<br/>Why did it fail?"]
+            PLAN["Plan<br/>What should change?"]
+            SAFE["Safety Review<br/>Advisory risk assessment"]
+        end
+
+        MEM[("SQLite Recovery History")]
+        SUP <--> MEM
+        SUP <--> DIAG
+        DIAG --> PLAN --> SAFE
     end
 
-    subgraph det["Deterministic core — binding"]
-        Pol{Policy / authorization gate<br/>least-privilege · default-deny}
-        Ver{Independent verifier}
-        Store[(SQLite trace)]
+    subgraph POLICY["DETERMINISTIC SAFETY BOUNDARY"]
+        direction TB
+        GATE{"Policy Gate"}
+        LIMITS["Allowed actions · Parameter bounds<br/>Retry limits"]
+        LIMITS --> GATE
     end
 
-    subgraph work["Workloads — one agent loop drives both"]
-        Exe[Local executor<br/>workload-agnostic]
-        Train[PyTorch training]
-        Prep[Spark-style data prep]
+    subgraph WORKLOAD["ML WORKLOAD EXECUTION — Local"]
+        direction LR
+        EXEC["Approved Workload Executor"]
+        TRAIN["PyTorch Training"]
+        DATA["Data Preparation"]
+        EXEC --> TRAIN
+        EXEC --> DATA
     end
 
-    Sup --> reason
-    Sup --> Pol & Ver & Exe
-    Exe --> Train & Prep
-    Pol -. gates .-> Exe
-    Ver -. decides done .-> Sup
-    Sup --> Store
+    VERIFY["INDEPENDENT VERIFIER<br/>Reload checkpoint · Check metrics<br/>Evaluate trusted acceptance criteria"]
 
-    classDef orch fill:#dbeafe,stroke:#1d4ed8,color:#111827;
-    classDef agent fill:#fef3c7,stroke:#b45309,color:#111827;
-    classDef core fill:#bbf7d0,stroke:#15803d,color:#111827;
-    classDef wl fill:#e5e7eb,stroke:#475569,color:#111827;
-    class Sup orch;
-    class DoDA,DiagA,PlanA,SafeA agent;
-    class Pol,Ver,Store core;
-    class Exe,Train,Prep wl;
+    DONE["GOAL VERIFIED — COMPLETE"]
+    STOP["Stop / Escalate"]
+
+    GOAL --> SUP
+    SAFE -->|"Proposed remediation"| GATE
+    GATE -->|"Approved"| EXEC
+    GATE -.->|"Rejected + reason"| SUP
+    TRAIN --> VERIFY
+    DATA --> VERIFY
+    VERIFY -->|"All checks pass"| DONE
+    VERIFY -.->|"Checks fail + evidence"| SUP
+    SUP -.->|"Budget exhausted"| STOP
+
+    classDef goal fill:#e8edf4,stroke:#667085,color:#172033
+    classDef agent fill:#e9efff,stroke:#6381c5,color:#172554
+    classDef policy fill:#fff1d6,stroke:#c58b28,color:#744210
+    classDef workload fill:#f2f3f5,stroke:#8a929f,color:#252a34
+    classDef verifier fill:#dcf3e6,stroke:#26865b,color:#14532d
+    classDef stop fill:#fbe9e7,stroke:#b65d53,color:#7f1d1d
+
+    class GOAL,SUP,MEM goal
+    class DIAG,PLAN,SAFE agent
+    class GATE,LIMITS policy
+    class EXEC,TRAIN,DATA workload
+    class VERIFY,DONE verifier
+    class STOP stop
 ```
 
 See [`docs/architecture.md`](docs/architecture.md) for the full write-up.
