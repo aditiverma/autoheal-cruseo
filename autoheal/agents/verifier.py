@@ -8,9 +8,9 @@ by an LLM judging its own work.
 from __future__ import annotations
 
 from ..engine.verification import verify
-from ..schemas import DoneDefinition, ExecutionResult, VerificationResult
+from ..schemas import AcceptanceSpec, ExecutionResult, VerificationResult
 
 
-def independently_verify(done: DoneDefinition,
+def independently_verify(done: AcceptanceSpec,
                          result: ExecutionResult) -> VerificationResult:
     return verify(done, result)

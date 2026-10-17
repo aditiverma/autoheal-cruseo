@@ -16,7 +16,7 @@ The guiding principle:
 
 A reasoning agent is never allowed to declare its own success. A deterministic
 verifier re-loads the artifacts and re-checks the metrics, and a trusted
-Definition-of-Done spec — not the agent — sets the bar.
+acceptance-criteria spec — not the agent — sets the bar.
 
 ---
 
@@ -24,7 +24,7 @@ Definition-of-Done spec — not the agent — sets the bar.
 
 ```mermaid
 graph TB
-    Goal([One-line goal]) --> DoD[Definition of Done<br/>reconciled vs trusted minimum]
+    Goal([One-line goal]) --> DoD[Acceptance criteria<br/>reconciled vs trusted minimum]
     DoD --> Grant[/Authorization grant<br/>least-privilege · default-deny/]
     Grant --> Exec[Execute workload]
     Exec --> Ev[Observe real evidence<br/>exit code · logs · metrics]
@@ -94,7 +94,7 @@ python main.py run --scenario underfit --offline
 
 ### Where Crusoe Managed Inference appears
 
-Every reasoning step — Definition of Done, diagnosis, remediation planning, and
+Every reasoning step — acceptance criteria, diagnosis, remediation planning, and
 the safety review — is a call to a Crusoe-hosted NVIDIA Nemotron model via the
 OpenAI-compatible endpoint (`autoheal/llm/crusoe_client.py`). Crusoe inference is
 in the decision loop, not just a final summary. Only inference runs on Crusoe;
@@ -151,7 +151,7 @@ graph TB
     Sup[Recursive Supervisor<br/>owns goal · budgets · escalation]
 
     subgraph reason["Reasoning agents — Crusoe/Nemotron · advisory"]
-        DoDA[Definition-of-Done]
+        DoDA[Acceptance criteria]
         DiagA[Diagnostician]
         PlanA[Remediation planner]
         SafeA[Safety reviewer]
@@ -191,7 +191,7 @@ Components:
 
 - **Supervisor** (`agents/supervisor.py`) — owns the goal, drives the recursive
   loop, enforces budgets, refuses to re-run an already-tried config, escalates.
-- **Definition-of-Done agent** (`agents/definition_of_done.py`) — turns the goal
+- **acceptance-criteria agent** (`agents/acceptance.py`) — turns the goal
   into checks, **reconciled against a trusted minimum** it cannot weaken.
 - **Diagnostician** (`agents/diagnostician.py`) — root-causes from real evidence.
 - **Remediation planner** (`agents/remediation_planner.py`) — one structured,
@@ -218,7 +218,7 @@ agent logic unchanged.
 ## What we built vs. what we used
 
 **Built during the hackathon (all original):** the recursive supervisor and its
-budget/no-progress guards; the stage-aware Definition-of-Done reconciliation
+budget/no-progress guards; the stage-aware acceptance-criteria reconciliation
 against a trusted minimum (the agent may only tighten metric thresholds, never
 invent structural checks); the diagnostician / planner / safety agents and their
 prompts; the deterministic policy engine; the independent deterministic verifier;

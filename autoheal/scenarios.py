@@ -5,7 +5,7 @@ produces a *real* failure the agent team must recover from.
 """
 from __future__ import annotations
 
-from .agents.definition_of_done import (
+from .agents.acceptance import (
     DATAPREP_METRICS,
     DATAPREP_MINIMUM,
     TRAINING_METRICS,

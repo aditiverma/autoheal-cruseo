@@ -18,7 +18,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from autoheal.agents.definition_of_done import DefinitionOfDoneAgent
+from autoheal.agents.acceptance import AcceptanceCriteriaAgent
 from autoheal.agents.supervisor import Supervisor
 from autoheal.engine.policy import Policy
 from autoheal.engine.state import Store
@@ -50,8 +50,8 @@ def make_narrator():
             _p(f"    may propose: {g['allowed_actions']}")
             _p(f"    quotas: {g['quotas']}")
             _p(f"    \033[31mdenied (structurally impossible): {g['denied']}\033[0m")
-        elif event == "definition_of_done":
-            _p("\n\033[1m◆ Definition of Done\033[0m (reconciled vs trusted minimum)")
+        elif event == "acceptance":
+            _p("\n\033[1m◆ acceptance criteria\033[0m (reconciled vs trusted minimum)")
             for c in data["done"]["checks"]:
                 extra = ""
                 if c["kind"] == "metric_threshold":
@@ -135,7 +135,7 @@ def cmd_run(args) -> int:
     executor = LocalExecutor(ARTIFACTS, timeout_s=args.timeout)
     policy = scenario.get("policy") or Policy()
     policy.max_attempts = args.max_attempts
-    dod = DefinitionOfDoneAgent(
+    dod = AcceptanceCriteriaAgent(
         llm,
         trusted_minimum=scenario.get("trusted_minimum"),
         known_metrics=scenario.get("known_metrics"),

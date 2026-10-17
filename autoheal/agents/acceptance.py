@@ -1,4 +1,4 @@
-"""Definition-of-Done agent.
+"""acceptance-criteria agent.
 
 Turns a vague goal ("prepare a validated dataset" / "train a validated model")
 into explicit, machine-checkable conditions. Critically, the agent is NOT
@@ -15,19 +15,19 @@ agent serves both workloads behind one API.
 """
 from __future__ import annotations
 
-from ..schemas import DoneCheck, DoneDefinition
+from ..schemas import AcceptanceCheck, AcceptanceSpec
 
 SYSTEM = (
-    "You are the Definition-of-Done agent in an autonomous ML pipeline healer. "
+    "You are the acceptance-criteria agent in an autonomous ML pipeline healer. "
     "Given a goal, produce explicit, independently checkable completion criteria. "
     "Prefer objective checks a program can verify from artifacts and metrics."
 )
 
 # ---- training stage --------------------------------------------------------
 TRAINING_MINIMUM = [
-    DoneCheck(name="training process exits successfully", kind="process_success"),
-    DoneCheck(name="model checkpoint is loadable", kind="checkpoint_loadable"),
-    DoneCheck(name="validation accuracy meets floor", kind="metric_threshold",
+    AcceptanceCheck(name="training process exits successfully", kind="process_success"),
+    AcceptanceCheck(name="model checkpoint is loadable", kind="checkpoint_loadable"),
+    AcceptanceCheck(name="validation accuracy meets floor", kind="metric_threshold",
               metric="val_accuracy", op=">=", threshold=0.90),
 ]
 # Outcome metrics only; epochs_run is a tunable under budget, not a goal metric.
@@ -35,16 +35,16 @@ TRAINING_METRICS = {"val_accuracy", "final_train_loss"}
 
 # ---- data-preparation stage ------------------------------------------------
 DATAPREP_MINIMUM = [
-    DoneCheck(name="data-prep process exits successfully", kind="process_success"),
-    DoneCheck(name="processed dataset artifact exists", kind="artifact_exists",
+    AcceptanceCheck(name="data-prep process exits successfully", kind="process_success"),
+    AcceptanceCheck(name="processed dataset artifact exists", kind="artifact_exists",
               artifact="dataset.npz"),
-    DoneCheck(name="processed dataset is loadable and non-empty",
+    AcceptanceCheck(name="processed dataset is loadable and non-empty",
               kind="dataset_loadable"),
 ]
 DATAPREP_METRICS = {"rows_out", "n_partitions", "peak_mem_mb"}
 
 
-class DefinitionOfDoneAgent:
+class AcceptanceCriteriaAgent:
     def __init__(self, llm, trusted_minimum=None, known_metrics=None,
                  stage: str = "model training"):
         self.llm = llm
@@ -52,22 +52,22 @@ class DefinitionOfDoneAgent:
         self.known_metrics = known_metrics or TRAINING_METRICS
         self.stage = stage
 
-    def define(self, goal: str) -> DoneDefinition:
+    def define(self, goal: str) -> AcceptanceSpec:
         required = ", ".join(c.name for c in self.trusted_minimum)
         user = (
             f"Goal: {goal}\n"
             f"This goal concerns the {self.stage} stage of an ML pipeline.\n\n"
-            "Produce a DoneDefinition. It MUST include at least these checks: "
+            "Produce a AcceptanceSpec. It MUST include at least these checks: "
             f"{required}. You may add stricter checks.\n"
             "metric_threshold checks may ONLY reference these metric keys emitted "
             f"by the workload: {sorted(self.known_metrics)}. Do not invent keys."
         )
         proposed = self.llm.complete_json(
-            system=SYSTEM, user=user, schema=DoneDefinition, role="reason"
+            system=SYSTEM, user=user, schema=AcceptanceSpec, role="reason"
         )
         return self._reconcile(goal, proposed)
 
-    def _reconcile(self, goal: str, proposed: DoneDefinition) -> DoneDefinition:
+    def _reconcile(self, goal: str, proposed: AcceptanceSpec) -> AcceptanceSpec:
         """Reconcile the agent's proposal against the trusted spec.
 
         The agent's ONLY latitude is to add stricter `metric_threshold` checks on
@@ -77,7 +77,7 @@ class DefinitionOfDoneAgent:
         weaken a floor, or (as a failure mode we actually hit) assert a check the
         workload can never satisfy and make the goal unreachable.
         """
-        checks: list[DoneCheck] = [
+        checks: list[AcceptanceCheck] = [
             c for c in proposed.checks
             if c.kind == "metric_threshold" and c.metric in self.known_metrics
         ]
@@ -98,7 +98,7 @@ class DefinitionOfDoneAgent:
                     existing.op = req.op or ">="
             else:
                 checks.append(req)  # structural checks only from trusted spec
-        return DoneDefinition(
+        return AcceptanceSpec(
             goal=goal, checks=checks,
             rationale=(proposed.rationale
                        + " [reconciled against trusted minimum spec]").strip(),

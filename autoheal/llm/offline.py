@@ -13,8 +13,8 @@ from pydantic import BaseModel
 
 from ..schemas import (
     Diagnosis,
-    DoneCheck,
-    DoneDefinition,
+    AcceptanceCheck,
+    AcceptanceSpec,
     RemediationAction,
     SafetyReview,
 )
@@ -36,13 +36,13 @@ class OfflineLLM:
     def complete_json(
         self, *, system: str, user: str, schema: Type[T], role: str = "reason"
     ) -> T:
-        if schema is DoneDefinition:
-            return DoneDefinition(  # type: ignore[return-value]
+        if schema is AcceptanceSpec:
+            return AcceptanceSpec(  # type: ignore[return-value]
                 goal=user[:120],
                 checks=[
-                    DoneCheck(name="training process exits 0", kind="process_success"),
-                    DoneCheck(name="checkpoint loadable", kind="checkpoint_loadable"),
-                    DoneCheck(
+                    AcceptanceCheck(name="training process exits 0", kind="process_success"),
+                    AcceptanceCheck(name="checkpoint loadable", kind="checkpoint_loadable"),
+                    AcceptanceCheck(
                         name="val accuracy >= 0.90",
                         kind="metric_threshold",
                         metric="val_accuracy",
@@ -50,7 +50,7 @@ class OfflineLLM:
                         threshold=0.90,
                     ),
                 ],
-                rationale="offline canned definition of done",
+                rationale="offline canned acceptance criteria",
             )
         if schema is Diagnosis:
             u = user.lower()

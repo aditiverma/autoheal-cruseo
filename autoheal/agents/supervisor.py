@@ -2,7 +2,7 @@
 
 Owns the original goal and drives the reason -> act -> observe -> verify ->
 re-plan loop. It never declares success itself: the independent verifier decides
-when the Definition of Done is met. It enforces budgets (max executions, max
+when the acceptance criteria is met. It enforces budgets (max executions, max
 rejected plans), refuses to re-run a configuration it has already tried (no
 infinite identical retries), and escalates to a human when the evidence says it
 is stuck. Every reasoning step goes through Crusoe/Nemotron; every binding
@@ -15,8 +15,8 @@ from typing import Callable, Optional
 from ..engine.policy import Policy
 from ..engine.state import Store
 from ..engine.verification import verify
-from ..schemas import DoneDefinition, ExecutionResult, TrainConfig
-from .definition_of_done import DefinitionOfDoneAgent
+from ..schemas import AcceptanceSpec, ExecutionResult, TrainConfig
+from .acceptance import AcceptanceCriteriaAgent
 from .diagnostician import DiagnosticAgent
 from .remediation_planner import RemediationPlanner
 from .safety_reviewer import SafetyReviewer
@@ -42,14 +42,14 @@ def _render_history(rows: list[dict]) -> str:
 class Supervisor:
     def __init__(self, llm, store: Store, executor, policy: Optional[Policy] = None,
                  narrate: Callable[[str, dict], None] | None = None,
-                 dod: Optional[DefinitionOfDoneAgent] = None,
+                 dod: Optional[AcceptanceCriteriaAgent] = None,
                  workload_module: str = "autoheal.workloads.train"):
         self.llm = llm
         self.store = store
         self.executor = executor
         self.policy = policy or Policy()
         self.workload_module = workload_module
-        self.dod = dod or DefinitionOfDoneAgent(llm)
+        self.dod = dod or AcceptanceCriteriaAgent(llm)
         self.diagnostician = DiagnosticAgent(llm)
         self.planner = RemediationPlanner(llm)
         self.safety = SafetyReviewer(llm)
@@ -62,7 +62,7 @@ class Supervisor:
 
         done = self.dod.define(goal)
         self.store.set_done_definition(run_id, done.model_dump_json())
-        self.narrate("definition_of_done", {"done": done.model_dump()})
+        self.narrate("acceptance", {"done": done.model_dump()})
 
         config = start_config
         executed_sigs: set[str] = set()

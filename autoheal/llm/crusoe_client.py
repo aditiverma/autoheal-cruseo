@@ -75,15 +75,29 @@ class CrusoeLLM:
         return sorted(m.id for m in self.client.models.list().data)
 
     def _chat(self, model: str, system: str, user: str) -> str:
-        resp = self.client.chat.completions.create(
-            model=model,
-            temperature=self.temperature,
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": user},
-            ],
-        )
-        return resp.choices[0].message.content or ""
+        import time
+
+        from openai import APIConnectionError, RateLimitError
+
+        messages = [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ]
+        delay = 4.0
+        last_err: Exception | None = None
+        for attempt in range(5):  # bounded retry/backoff for transient throttling
+            try:
+                resp = self.client.chat.completions.create(
+                    model=model, temperature=self.temperature, messages=messages,
+                )
+                return resp.choices[0].message.content or ""
+            except (RateLimitError, APIConnectionError) as e:
+                last_err = e
+                if attempt == 4:
+                    break
+                time.sleep(delay)
+                delay = min(delay * 2, 30.0)
+        raise LLMError(f"Crusoe inference failed after retries: {last_err}")
 
     def complete_json(
         self, *, system: str, user: str, schema: Type[T], role: str = "reason"

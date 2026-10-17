@@ -93,7 +93,7 @@ class ExecutionResult(BaseModel):
 # --------------------------------------------------------------------------- #
 # Agent outputs                                                                #
 # --------------------------------------------------------------------------- #
-class DoneCheck(BaseModel):
+class AcceptanceCheck(BaseModel):
     name: str
     kind: Literal["process_success", "artifact_exists", "checkpoint_loadable",
                   "dataset_loadable", "metric_threshold"]
@@ -105,9 +105,9 @@ class DoneCheck(BaseModel):
     threshold: Optional[float] = None
 
 
-class DoneDefinition(BaseModel):
+class AcceptanceSpec(BaseModel):
     goal: str
-    checks: list[DoneCheck]
+    checks: list[AcceptanceCheck]
     rationale: str = ""
 
 

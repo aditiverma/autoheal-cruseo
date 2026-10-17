@@ -3,7 +3,7 @@
 Decides whether the goal is actually done using real artifacts and metrics, not
 the agent's narrative or confidence. Deterministic by design: it re-loads the
 checkpoint from disk, re-reads metrics the workload wrote, and evaluates each
-Definition-of-Done check. The supervisor is not allowed to advance a stage
+acceptance-criteria check. The supervisor is not allowed to advance a stage
 until this passes.
 """
 from __future__ import annotations
@@ -13,8 +13,8 @@ from pathlib import Path
 
 from ..schemas import (
     CheckResult,
-    DoneCheck,
-    DoneDefinition,
+    AcceptanceCheck,
+    AcceptanceSpec,
     ExecutionResult,
     VerificationResult,
 )
@@ -59,14 +59,14 @@ def _dataset_loadable(result: ExecutionResult) -> tuple[bool, str]:
         return False, f"load failed: {e}"
 
 
-def verify(done: DoneDefinition, result: ExecutionResult) -> VerificationResult:
+def verify(done: AcceptanceSpec, result: ExecutionResult) -> VerificationResult:
     checks: list[CheckResult] = []
     for c in done.checks:
         checks.append(_run_check(c, result))
     return VerificationResult(passed=all(c.passed for c in checks), checks=checks)
 
 
-def _run_check(c: DoneCheck, result: ExecutionResult) -> CheckResult:
+def _run_check(c: AcceptanceCheck, result: ExecutionResult) -> CheckResult:
     if c.kind == "process_success":
         return CheckResult(name=c.name, passed=result.succeeded,
                            detail=f"exit_code={result.exit_code}")

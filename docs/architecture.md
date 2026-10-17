@@ -12,7 +12,7 @@
 title: AutoHeal Recursive Healing Loop
 ---
 graph TB
-    Goal([One-line goal]) --> DoD[Definition of Done<br/>reconciled vs trusted minimum]
+    Goal([One-line goal]) --> DoD[Acceptance criteria<br/>reconciled vs trusted minimum]
     DoD --> Grant[/Authorization grant<br/>least-privilege · default-deny/]
     Grant --> Exec[Execute workload]
     Exec --> Ev[Observe real evidence<br/>exit code · logs · metrics]
@@ -55,7 +55,7 @@ graph TB
     Sup[Recursive Supervisor<br/>owns goal · budgets · escalation]
 
     subgraph reason["Reasoning agents — Crusoe/Nemotron · advisory"]
-        DoDA[Definition-of-Done]
+        DoDA[Acceptance criteria]
         DiagA[Diagnostician]
         PlanA[Remediation planner]
         SafeA[Safety reviewer]
@@ -111,15 +111,15 @@ action or certify its own success.
 
 Implemented in `autoheal/agents/supervisor.py`:
 
-1. **Definition of Done.** The DoD agent turns the goal into checks, which are
-   then *reconciled against a trusted minimum* (`definition_of_done.py`): the
+1. **Acceptance criteria.** The acceptance-criteria agent turns the goal into checks, which are
+   then *reconciled against a trusted minimum* (`acceptance.py`): the
    agent may add stricter checks but cannot drop a required one or lower a
    threshold below the floor. This answers "who decides done?" — not the agent.
 2. **Execute** the workload (`workloads/local_executor.py` → `train.py`) and
    capture real evidence: exit code, logs, metrics, artifacts.
 3. **Observe.** If the process succeeded, run **independent verification**
    (`engine/verification.py`): re-load the checkpoint from disk, re-read the
-   metrics, evaluate every DoD check. Success of a *step* is not completion of
+   metrics, evaluate every acceptance check. Success of a *step* is not completion of
    the *goal*.
 4. If verified → advance / complete. Otherwise **diagnose** (`diagnostician.py`)
    from the real evidence and prior attempts.
