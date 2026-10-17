@@ -5,40 +5,50 @@
 
 ## Diagrams
 
-### The recursive healing loop
+### Recursive recovery and verification
+
+Nemotron proposes, deterministic policy authorizes, and the independent verifier
+determines completion. The loop handles policy rejection, verification failure,
+replanning, and bounded execution:
 
 ```mermaid
 ---
-title: AutoHeal Recursive Healing Loop
+title: AutoHeal Recursive Recovery and Verification
 ---
-graph TB
-    Goal([One-line goal]) --> DoD[Acceptance criteria<br/>reconciled vs trusted minimum]
-    DoD --> Grant[/Authorization grant<br/>least-privilege · default-deny/]
-    Grant --> Exec[Execute workload]
-    Exec --> Ev[Observe real evidence<br/>exit code · logs · metrics]
-    Ev --> Ok{Process<br/>succeeded?}
-    Ok -->|no| Diag[Diagnose root cause]
-    Ok -->|yes| Verify{Independent verify:<br/>goal actually done?}
-    Verify -->|yes| Done([✓ Goal complete])
-    Verify -->|no| Diag
-    Diag --> Plan[Plan one bounded fix]
-    Plan --> Safety[Safety review · advisory]
-    Safety --> Policy{Policy / authorization gate<br/>deterministic · default-deny}
-    Policy -->|reject + disclose limit| Replan[Record + replan]
-    Replan --> Budget{Budget left?<br/>making progress?}
-    Budget -->|yes| Diag
-    Budget -->|no| Esc([⚠ Escalate to human])
-    Policy -->|allow| Apply[Apply fix + retry]
-    Apply --> Exec
+flowchart TD
+    A["Execute ML workload"]
+    B["Collect logs, metrics, and artifacts"]
+    C{"Independent verification passes?"}
+    D["Goal complete"]
+    E["Nemotron diagnoses failure"]
+    F["Propose next experiment / remediation"]
+    G{"Policy allows change?"}
+    H["Record rejection and replan"]
+    I["Apply approved change and retry"]
+    J["Record failed experiment"]
+    K{"Budget remaining?"}
+    L["Stop and escalate"]
 
-    classDef agent fill:#fef3c7,stroke:#b45309,color:#111827;
-    classDef gate fill:#bbf7d0,stroke:#15803d,color:#111827;
-    classDef done fill:#86efac,stroke:#15803d,color:#111827;
-    classDef stop fill:#fecaca,stroke:#b91c1c,color:#111827;
-    class DoD,Diag,Plan,Safety agent;
-    class Grant,Verify,Policy gate;
-    class Done done;
-    class Esc stop;
+    A --> B --> C
+    C -->|"Yes — all criteria met"| D
+    C -->|"No"| E
+    E --> F --> G
+    G -->|"Rejected"| H --> K
+    G -->|"Approved"| I --> A
+    C -.->|"Verification evidence"| J
+    J --> K
+    K -->|"Yes — revise strategy"| E
+    K -->|"No"| L
+
+    classDef reasoning fill:#e9efff,stroke:#6381c5,color:#172554
+    classDef policy fill:#fff1d6,stroke:#c58b28,color:#744210
+    classDef success fill:#dcf3e6,stroke:#26865b,color:#14532d
+    classDef failure fill:#fbe9e7,stroke:#b65d53,color:#7f1d1d
+
+    class E,F,H,J reasoning
+    class G,K policy
+    class D success
+    class L failure
 ```
 
 ### System architecture

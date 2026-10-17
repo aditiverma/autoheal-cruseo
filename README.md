@@ -22,41 +22,11 @@ acceptance-criteria spec — not the agent — sets the bar.
 
 ## What it does (one loop)
 
-```mermaid
-graph TB
-    Goal([One-line goal]) --> DoD[Acceptance criteria<br/>reconciled vs trusted minimum]
-    DoD --> Grant[/Authorization grant<br/>least-privilege · default-deny/]
-    Grant --> Exec[Execute workload]
-    Exec --> Ev[Observe real evidence<br/>exit code · logs · metrics]
-    Ev --> Ok{Process<br/>succeeded?}
-    Ok -->|no| Diag[Diagnose root cause]
-    Ok -->|yes| Verify{Independent verify:<br/>goal actually done?}
-    Verify -->|yes| Done([✓ Goal complete])
-    Verify -->|no| Diag
-    Diag --> Plan[Plan one bounded fix]
-    Plan --> Safety[Safety review · advisory]
-    Safety --> Policy{Policy / authorization gate<br/>deterministic · default-deny}
-    Policy -->|reject + disclose limit| Replan[Record + replan]
-    Replan --> Budget{Budget left?<br/>making progress?}
-    Budget -->|yes| Diag
-    Budget -->|no| Esc([⚠ Escalate to human])
-    Policy -->|allow| Apply[Apply fix + retry]
-    Apply --> Exec
-
-    classDef agent fill:#fef3c7,stroke:#b45309,color:#111827;
-    classDef gate fill:#bbf7d0,stroke:#15803d,color:#111827;
-    classDef done fill:#86efac,stroke:#15803d,color:#111827;
-    classDef stop fill:#fecaca,stroke:#b91c1c,color:#111827;
-    class DoD,Diag,Plan,Safety agent;
-    class Grant,Verify,Policy gate;
-    class Done done;
-    class Esc stop;
-```
-
-Amber = LLM reasoning (advisory). Green = deterministic gates (binding).
-
-This is **reason → act → observe → verify → re-plan**, not a fixed retry loop.
-The full system architecture diagram is in [Architecture](#architecture) below.
+AutoHeal turns a one-line goal into explicit checks, then runs an autonomous
+**reason → act → observe → verify → re-plan** loop until the goal is
+independently verified or budgets force escalation — not a fixed retry loop.
+The system architecture and the recursive recovery algorithm are diagrammed in
+[Architecture](#architecture) below.
 
 ## Why it's not just a retry loop or a Kubernetes operator
 
@@ -122,29 +92,14 @@ enforces a declared **executor memory budget** (the resource-limit semantics
 Spark/k8s use), which is modeled deterministically rather than by exhausting the
 host — safe, and faithful to how executors are OOM-killed.
 
-### Example live run (Nemotron-3-Super-120B via Crusoe)
-
-A real `rejection` run (full trace in [`demo/example-trace.json`](demo/example-trace.json)):
-
-```
-Attempt 1  underfit (val 0.50, loss 1.51)            → verify FAIL
-           diagnose INSUFFICIENT_EPOCHS → set epochs 2→10
-           POLICY REJECT: epochs=10 outside [1,8]     → replan
-           set epochs 2→8                             → ALLOW
-Attempt 2  val 0.91 PASS, but loss 0.90 > 0.2         → verify FAIL
-           re-diagnose LR_TOO_LOW → lr 0.002→0.01
-Attempt 3  loss 0.216, just over 0.2                  → verify FAIL
-           lr 0.01→0.02
-Attempt 4  val 0.975, loss 0.12                        → verify PASS → ✅ COMPLETE
-```
-
 ---
 
 ## Architecture
 
-Reasoning is advisory and runs on Crusoe/Nemotron; the binding decisions —
-what action is allowed, and whether the goal is actually done — are
-deterministic local code.
+**Nemotron proposes, deterministic policies authorize, and the independent
+verifier determines whether the original objective is complete.**
+
+### System architecture
 
 ```mermaid
 flowchart TB
@@ -211,6 +166,67 @@ flowchart TB
     class EXEC,TRAIN,DATA workload
     class VERIFY,DONE verifier
     class STOP stop
+```
+
+### Recursive recovery and verification
+
+How the loop handles policy rejection, verification failure, replanning, and
+bounded execution:
+
+```mermaid
+flowchart TD
+    A["Execute ML workload"]
+    B["Collect logs, metrics, and artifacts"]
+    C{"Independent verification passes?"}
+    D["Goal complete"]
+    E["Nemotron diagnoses failure"]
+    F["Propose next experiment / remediation"]
+    G{"Policy allows change?"}
+    H["Record rejection and replan"]
+    I["Apply approved change and retry"]
+    J["Record failed experiment"]
+    K{"Budget remaining?"}
+    L["Stop and escalate"]
+
+    A --> B --> C
+    C -->|"Yes — all criteria met"| D
+    C -->|"No"| E
+    E --> F --> G
+    G -->|"Rejected"| H --> K
+    G -->|"Approved"| I --> A
+    C -.->|"Verification evidence"| J
+    J --> K
+    K -->|"Yes — revise strategy"| E
+    K -->|"No"| L
+
+    classDef reasoning fill:#e9efff,stroke:#6381c5,color:#172554
+    classDef policy fill:#fff1d6,stroke:#c58b28,color:#744210
+    classDef success fill:#dcf3e6,stroke:#26865b,color:#14532d
+    classDef failure fill:#fbe9e7,stroke:#b65d53,color:#7f1d1d
+
+    class E,F,H,J reasoning
+    class G,K policy
+    class D success
+    class L failure
+```
+
+Blue = Nemotron reasoning (proposes). Amber = deterministic policy (authorizes
+and bounds). Green = goal verified complete. Red = bounded stop / escalation.
+
+### Recorded recovery trace
+
+A real `rejection` run (full trace in [`demo/example-trace.json`](demo/example-trace.json)):
+
+```
+Attempt 1  underfit (val 0.50, loss 1.51)             → verify FAIL
+           diagnose UNDERFITTING → propose epochs 2→10
+           POLICY REJECT: epochs=10 outside [1,5]      → replan
+           propose epochs 2→5                          → ALLOW
+Attempt 2  val 0.81, loss 1.15                          → verify FAIL
+           re-diagnose → lr 0.002→0.01
+Attempt 3  val 0.97, loss 0.34 (loss still too high)   → verify FAIL
+           lr 0.01→0.05
+Attempt 4  val 0.976, loss 0.09                         → verify PASS → ✅ COMPLETE
 ```
 
 See [`docs/architecture.md`](docs/architecture.md) for the full write-up.
