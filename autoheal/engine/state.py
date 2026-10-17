@@ -30,7 +30,7 @@ class Store:
             CREATE TABLE IF NOT EXISTS runs (
                 run_id TEXT PRIMARY KEY,
                 goal TEXT, status TEXT,
-                done_definition TEXT, created_at REAL, updated_at REAL
+                acceptance_criteria TEXT, created_at REAL, updated_at REAL
             );
             CREATE TABLE IF NOT EXISTS attempts (
                 attempt_id TEXT PRIMARY KEY,
@@ -55,9 +55,9 @@ class Store:
         self.conn.commit()
         return run_id
 
-    def set_done_definition(self, run_id: str, done_json: str) -> None:
+    def set_acceptance_criteria(self, run_id: str, done_json: str) -> None:
         self.conn.execute(
-            "UPDATE runs SET done_definition=?, updated_at=? WHERE run_id=?",
+            "UPDATE runs SET acceptance_criteria=?, updated_at=? WHERE run_id=?",
             (done_json, time.time(), run_id),
         )
         self.conn.commit()
@@ -127,9 +127,9 @@ class Store:
                         pass
             attempts.append(a)
         run["attempts"] = attempts
-        if run.get("done_definition"):
+        if run.get("acceptance_criteria"):
             try:
-                run["done_definition"] = json.loads(run["done_definition"])
+                run["acceptance_criteria"] = json.loads(run["acceptance_criteria"])
             except Exception:
                 pass
         return run

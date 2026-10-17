@@ -61,7 +61,7 @@ class Supervisor:
         self.narrate("grant", {"grant": self.policy.grant()})
 
         done = self.dod.define(goal)
-        self.store.set_done_definition(run_id, done.model_dump_json())
+        self.store.set_acceptance_criteria(run_id, done.model_dump_json())
         self.narrate("acceptance", {"done": done.model_dump()})
 
         config = start_config

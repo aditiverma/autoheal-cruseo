@@ -2,7 +2,7 @@
   "run_id": "run_604e0ebb13",
   "goal": "Prepare training data and train a validated PyTorch classifier.",
   "status": "complete",
-  "done_definition": {
+  "acceptance_criteria": {
     "goal": "Prepare training data and train a validated PyTorch classifier.",
     "checks": [
       {

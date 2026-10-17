@@ -7,7 +7,7 @@ Record a live `rejection` run (richest single-scenario flow) and narrate over it
 | Time | On screen | Say |
 |---|---|---|
 | 0–8s | Title + one line | "AutoHeal: recursive agents that don't just diagnose ML failures — they repair them, then independently *prove* the goal is actually done." |
-| 8–20s | `python main.py run --scenario rejection`; Attempt 1 fails verification | "The job exits zero — but our independent verifier, checking a trusted definition of done, fails it. Nemotron on Crusoe diagnoses the real cause from the logs." |
+| 8–20s | `python main.py run --scenario rejection`; Attempt 1 fails verification | "The job exits zero — but our independent verifier, checking trusted acceptance criteria, fails it. Nemotron on Crusoe diagnoses the real cause from the logs." |
 | 20–32s | the `POLICY REJECT: epochs=10 outside [1,8]` line | "The agent proposes a fix. A deterministic policy gate — not the model — rejects it for exceeding the compute budget, and tells it the limit. The agent replans within budget." |
 | 32–47s | Attempts 2–4 converging | "It re-diagnoses a *different* root cause, adjusts again, and converges — reasoning, not a retry loop." |
 | 47–55s | final `verify PASS → GOAL COMPLETE` | "The independent verifier confirms every condition is met. Done means done." |
@@ -19,7 +19,7 @@ Keep the terminal font large. One clean take of a real run beats any edit.
 
 **0:00–0:25 — the goal.** "A self-healing ML pipeline that keeps going until the
 *original goal* is verifiably met, with hard guardrails on what the agent may
-do." Show the reconciled Definition of Done.
+do." Show the reconciled acceptance criteria.
 
 **0:25–1:00 — real failure + delegated diagnosis.** Run `lr_divergence` (fast,
 2 executions). Show the NaN crash and the live Nemotron diagnosis from real logs.

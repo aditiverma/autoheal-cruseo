@@ -2,7 +2,7 @@
   "run_id": "run_7722e59d9e",
   "goal": "Prepare a validated training dataset from the raw input.",
   "status": "complete",
-  "done_definition": {
+  "acceptance_criteria": {
     "goal": "Prepare a validated training dataset from the raw input.",
     "checks": [
       {
