@@ -86,7 +86,7 @@ drivable by agents" idea from the KubeCon direction below.
 | `dataprep_oom` | data prep | 4-partition job needs ~1.2GB vs a 512MB executor limit → executor OOM, exits 1 | the KubeCon case: **"adjusting resources after an OOM failure"** — agent repartitions (or raises executor memory, bounded by the node cap) and re-runs |
 | `full` | training | `lr=5.0, epochs=3` | loss blows up to a finite-but-huge value (exit 0, garbage accuracy) → caught by the verifier → recovery |
 
-There is no NVIDIA GPU on the dev MacBook, so we do not fake a CUDA OOM. The
+There is no NVIDIA GPU on the dev MacBook, so AutoHeal does not fake a CUDA OOM. The
 training failures are authentic CPU-reproducible failures; the data-prep OOM
 enforces a declared **executor memory budget** (the resource-limit semantics
 Spark/k8s use), which is modeled deterministically rather than by exhausting the
@@ -258,7 +258,10 @@ agent logic unchanged.
 
 ---
 
-## What we built vs. what we used
+## What is built vs. what is used
+
+Solo project. Everything under "built" below is original work created during the
+hackathon.
 
 **Built during the hackathon (all original):** the recursive supervisor and its
 budget/no-progress guards; the stage-aware acceptance-criteria reconciliation
