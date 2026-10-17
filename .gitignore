@@ -1,0 +1,10 @@
+.venv/
+.env
+__pycache__/
+*.pyc
+artifacts/
+runs/
+*.sqlite
+*.sqlite3
+.idea/
+.DS_Store

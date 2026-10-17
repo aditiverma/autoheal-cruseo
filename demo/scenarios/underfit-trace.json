@@ -1,0 +1,247 @@
+{
+  "run_id": "run_8204e20ae5",
+  "goal": "Prepare training data and train a validated PyTorch classifier.",
+  "status": "complete",
+  "done_definition": {
+    "goal": "Prepare training data and train a validated PyTorch classifier.",
+    "checks": [
+      {
+        "name": "training_process_success",
+        "kind": "process_success",
+        "detail": "",
+        "metric": null,
+        "op": null,
+        "threshold": null
+      },
+      {
+        "name": "model_checkpoint_exists",
+        "kind": "artifact_exists",
+        "detail": "model.pt",
+        "metric": null,
+        "op": null,
+        "threshold": null
+      },
+      {
+        "name": "model_checkpoint_loadable",
+        "kind": "checkpoint_loadable",
+        "detail": "model.pt",
+        "metric": null,
+        "op": null,
+        "threshold": null
+      },
+      {
+        "name": "val_accuracy_threshold",
+        "kind": "metric_threshold",
+        "detail": "",
+        "metric": "val_accuracy",
+        "op": ">=",
+        "threshold": 0.9
+      },
+      {
+        "name": "final_train_loss_reasonable",
+        "kind": "metric_threshold",
+        "detail": "",
+        "metric": "final_train_loss",
+        "op": "<",
+        "threshold": 1000000.0
+      }
+    ],
+    "rationale": "Ensures training succeeded, checkpoint saved and loadable, and validation accuracy meets a minimum performance threshold. [reconciled against trusted minimum spec]"
+  },
+  "created_at": 1792265179.9519172,
+  "updated_at": 1792265211.3395772,
+  "attempts": [
+    {
+      "attempt_id": "run_8204e20ae5-a1",
+      "run_id": "run_8204e20ae5",
+      "n": 1,
+      "kind": "execute",
+      "config": {
+        "lr": 0.002,
+        "batch_size": 64,
+        "epochs": 3,
+        "grad_clip": null,
+        "grad_accum": 1,
+        "hidden_size": 128,
+        "num_classes": 6,
+        "n_features": 20,
+        "n_samples": 4000,
+        "class_sep": 0.9,
+        "dataloader_workers": 0,
+        "seed": 0
+      },
+      "evidence": {
+        "succeeded": true,
+        "exit_code": 0,
+        "duration_s": 1.3735098838806152,
+        "stdout_tail": "[train] starting lr=0.002 batch_size=64 epochs=3 grad_clip=None grad_accum=1\n[train] epoch=0 train_loss=1.6662\n[train] epoch=1 train_loss=1.5137\n[train] epoch=2 train_loss=1.3791\n[train] done val_accuracy=0.6187\n[train] METRICS={\"status\": \"completed\", \"epochs_run\": 3, \"val_accuracy\": 0.6187, \"final_train_loss\": 1.3791, \"lr\": 0.002}\n",
+        "stderr_tail": "",
+        "metrics": {
+          "status": "completed",
+          "epochs_run": 3,
+          "val_accuracy": 0.6187,
+          "final_train_loss": 1.3791,
+          "lr": 0.002
+        },
+        "artifacts": {
+          "model.pt": "/Users/aditi/autoheal-cruseo/artifacts/run_8204e20ae5-a1/model.pt",
+          "metrics.json": "/Users/aditi/autoheal-cruseo/artifacts/run_8204e20ae5-a1/metrics.json",
+          "config.json": "/Users/aditi/autoheal-cruseo/artifacts/run_8204e20ae5-a1/config.json"
+        }
+      },
+      "diagnosis": null,
+      "proposal": null,
+      "safety": null,
+      "policy": null,
+      "verification": {
+        "passed": false,
+        "checks": [
+          {
+            "name": "training_process_success",
+            "passed": true,
+            "detail": "exit_code=0"
+          },
+          {
+            "name": "model_checkpoint_exists",
+            "passed": true,
+            "detail": "['model.pt', 'metrics.json', 'config.json']"
+          },
+          {
+            "name": "model_checkpoint_loadable",
+            "passed": true,
+            "detail": "loaded /Users/aditi/autoheal-cruseo/artifacts/run_8204e20ae5-a1/model.pt"
+          },
+          {
+            "name": "val_accuracy_threshold",
+            "passed": false,
+            "detail": "val_accuracy=0.6187 >= 0.9"
+          },
+          {
+            "name": "final_train_loss_reasonable",
+            "passed": true,
+            "detail": "final_train_loss=1.3791 < 1000000.0"
+          }
+        ]
+      },
+      "note": null,
+      "created_at": 1792265193.8795772
+    },
+    {
+      "attempt_id": "run_8204e20ae5-a2",
+      "run_id": "run_8204e20ae5",
+      "n": 2,
+      "kind": "approved_plan",
+      "config": null,
+      "evidence": null,
+      "diagnosis": {
+        "failure_class": "UNDERFITTING",
+        "root_cause": "Insufficient training epochs leading to inadequate model convergence",
+        "reasoning": "Training loss decreased over 3 epochs but remained relatively high (1.3791), and validation accuracy stayed low (0.6187) far below the target of 0.9. With only 3 epochs run, the model did not have enough time to learn the task adequately, indicating underfitting rather than learning instability or overfitting.",
+        "confidence": 0.8,
+        "evidence_cited": [
+          "epochs_run=3",
+          "final_train_loss=1.3791",
+          "val_accuracy=0.6187",
+          "lr=0.002"
+        ]
+      },
+      "proposal": {
+        "action": "set_epochs",
+        "parameter": "epochs",
+        "old_value": 3,
+        "new_value": 10,
+        "reason": "Increase training epochs to allow the model sufficient time to converge and reduce underfitting."
+      },
+      "safety": {
+        "verdict": "allow",
+        "risk_level": "low",
+        "prompt_injection_detected": false,
+        "concerns": [],
+        "reasoning": "The proposed change increases epochs to improve convergence; it is a standard hyperparameter adjustment with no suspicious instructions in the logs."
+      },
+      "policy": {
+        "allowed": true,
+        "violations": [],
+        "reason": "within policy"
+      },
+      "verification": null,
+      "note": null,
+      "created_at": 1792265210.010147
+    },
+    {
+      "attempt_id": "run_8204e20ae5-a3",
+      "run_id": "run_8204e20ae5",
+      "n": 3,
+      "kind": "execute_verified",
+      "config": {
+        "lr": 0.002,
+        "batch_size": 64,
+        "epochs": 10,
+        "grad_clip": null,
+        "grad_accum": 1,
+        "hidden_size": 128,
+        "num_classes": 6,
+        "n_features": 20,
+        "n_samples": 4000,
+        "class_sep": 0.9,
+        "dataloader_workers": 0,
+        "seed": 0
+      },
+      "evidence": {
+        "succeeded": true,
+        "exit_code": 0,
+        "duration_s": 1.3252999782562256,
+        "stdout_tail": "[train] starting lr=0.002 batch_size=64 epochs=10 grad_clip=None grad_accum=1\n[train] epoch=0 train_loss=1.6662\n[train] epoch=1 train_loss=1.5137\n[train] epoch=2 train_loss=1.3791\n[train] epoch=3 train_loss=1.2598\n[train] epoch=4 train_loss=1.1536\n[train] epoch=5 train_loss=1.0590\n[train] epoch=6 train_loss=0.9746\n[train] epoch=7 train_loss=0.8994\n[train] epoch=8 train_loss=0.8321\n[train] epoch=9 train_loss=0.7720\n[train] done val_accuracy=0.9388\n[train] METRICS={\"status\": \"completed\", \"epochs_run\": 10, \"val_accuracy\": 0.9388, \"final_train_loss\": 0.772, \"lr\": 0.002}\n",
+        "stderr_tail": "",
+        "metrics": {
+          "status": "completed",
+          "epochs_run": 10,
+          "val_accuracy": 0.9388,
+          "final_train_loss": 0.772,
+          "lr": 0.002
+        },
+        "artifacts": {
+          "model.pt": "/Users/aditi/autoheal-cruseo/artifacts/run_8204e20ae5-a3/model.pt",
+          "metrics.json": "/Users/aditi/autoheal-cruseo/artifacts/run_8204e20ae5-a3/metrics.json",
+          "config.json": "/Users/aditi/autoheal-cruseo/artifacts/run_8204e20ae5-a3/config.json"
+        }
+      },
+      "diagnosis": null,
+      "proposal": null,
+      "safety": null,
+      "policy": null,
+      "verification": {
+        "passed": true,
+        "checks": [
+          {
+            "name": "training_process_success",
+            "passed": true,
+            "detail": "exit_code=0"
+          },
+          {
+            "name": "model_checkpoint_exists",
+            "passed": true,
+            "detail": "['model.pt', 'metrics.json', 'config.json']"
+          },
+          {
+            "name": "model_checkpoint_loadable",
+            "passed": true,
+            "detail": "loaded /Users/aditi/autoheal-cruseo/artifacts/run_8204e20ae5-a3/model.pt"
+          },
+          {
+            "name": "val_accuracy_threshold",
+            "passed": true,
+            "detail": "val_accuracy=0.9388 >= 0.9"
+          },
+          {
+            "name": "final_train_loss_reasonable",
+            "passed": true,
+            "detail": "final_train_loss=0.772 < 1000000.0"
+          }
+        ]
+      },
+      "note": null,
+      "created_at": 1792265211.3388941
+    }
+  ]
+}

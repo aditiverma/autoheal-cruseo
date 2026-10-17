@@ -1,0 +1,206 @@
+{
+  "run_id": "run_6598a88598",
+  "goal": "Prepare training data and train a validated PyTorch classifier.",
+  "status": "complete",
+  "done_definition": {
+    "goal": "Prepare training data and train a validated PyTorch classifier.",
+    "checks": [
+      {
+        "name": "training_process_success",
+        "kind": "process_success",
+        "detail": "",
+        "metric": null,
+        "op": null,
+        "threshold": null
+      },
+      {
+        "name": "checkpoint_exists_and_loadable",
+        "kind": "checkpoint_loadable",
+        "detail": "Model checkpoint file at ./model.pt can be loaded with torch.load",
+        "metric": null,
+        "op": null,
+        "threshold": null
+      },
+      {
+        "name": "validation_accuracy_threshold",
+        "kind": "metric_threshold",
+        "detail": "",
+        "metric": "val_accuracy",
+        "op": ">=",
+        "threshold": 0.9
+      },
+      {
+        "name": "final_train_loss_threshold",
+        "kind": "metric_threshold",
+        "detail": "",
+        "metric": "final_train_loss",
+        "op": "<=",
+        "threshold": 0.2
+      }
+    ],
+    "rationale": "Ensures training succeeded, model is saved and loadable, and achieves sufficient validation accuracy while keeping training loss low. [reconciled against trusted minimum spec]"
+  },
+  "created_at": 1792265124.725431,
+  "updated_at": 1792265162.8615239,
+  "attempts": [
+    {
+      "attempt_id": "run_6598a88598-a1",
+      "run_id": "run_6598a88598",
+      "n": 1,
+      "kind": "execute",
+      "config": {
+        "lr": 5.0,
+        "batch_size": 64,
+        "epochs": 20,
+        "grad_clip": null,
+        "grad_accum": 1,
+        "hidden_size": 128,
+        "num_classes": 6,
+        "n_features": 20,
+        "n_samples": 4000,
+        "class_sep": 0.9,
+        "dataloader_workers": 0,
+        "seed": 0
+      },
+      "evidence": {
+        "succeeded": false,
+        "exit_code": 1,
+        "duration_s": 1.3041460514068604,
+        "stdout_tail": "[train] starting lr=5.0 batch_size=64 epochs=20 grad_clip=None grad_accum=1\n[train] epoch=0 train_loss=552914.0625\n[train] epoch=1 train_loss=3454912768.0000\n[train] epoch=2 train_loss=3203256703223070720.0000\n[train] epoch=3 train_loss=139449782187206790088165949440.0000\n[train] FATAL: loss diverged to NaN/Inf at epoch=4 step=224 (lr=5.0). Gradients exploded.\n[train] METRICS={\"status\": \"diverged\", \"epochs_run\": 4, \"diverged_at_step\": 224, \"lr\": 5.0}\n",
+        "stderr_tail": "",
+        "metrics": {
+          "status": "diverged",
+          "epochs_run": 4,
+          "diverged_at_step": 224,
+          "lr": 5.0
+        },
+        "artifacts": {
+          "metrics.json": "/Users/aditi/autoheal-cruseo/artifacts/run_6598a88598-a1/metrics.json",
+          "config.json": "/Users/aditi/autoheal-cruseo/artifacts/run_6598a88598-a1/config.json"
+        }
+      },
+      "diagnosis": null,
+      "proposal": null,
+      "safety": null,
+      "policy": null,
+      "verification": null,
+      "note": null,
+      "created_at": 1792265138.127583
+    },
+    {
+      "attempt_id": "run_6598a88598-a2",
+      "run_id": "run_6598a88598",
+      "n": 2,
+      "kind": "approved_plan",
+      "config": null,
+      "evidence": null,
+      "diagnosis": {
+        "failure_class": "LR_DIVERGENCE",
+        "root_cause": "Learning rate set too high (5.0) without gradient clipping, causing gradient explosion and loss divergence.",
+        "reasoning": "The training log shows an initial learning rate of 5.0, loss values growing astronomically from epoch 0 onward, and a fatal divergence at step 224 with the message 'Gradients exploded.' The configuration indicates grad_clip=None, so no mechanism was in place to mitigate large updates. This pattern is characteristic of an excessively large learning rate leading to unstable gradients.",
+        "confidence": 0.95,
+        "evidence_cited": [
+          "[train] starting lr=5.0 batch_size=64 epochs=20 grad_clip=None grad_accum=1",
+          "[train] epoch=0 train_loss=552914.0625",
+          "[train] epoch=1 train_loss=3454912768.0000",
+          "[train] epoch=2 train_loss=3203256703223070720.0000",
+          "[train] epoch=3 train_loss=139449782187206790088165949440.0000",
+          "[train] FATAL: loss diverged to NaN/Inf at epoch=4 step=224 (lr=5.0). Gradients exploded.",
+          "[train] METRICS={\"status\": \"diverged\", \"epochs_run\": 4, \"diverged_at_step\": 224, \"lr\": 5.0}"
+        ]
+      },
+      "proposal": {
+        "action": "set_learning_rate",
+        "parameter": "lr",
+        "old_value": 5.0,
+        "new_value": 0.1,
+        "reason": "Learning rate too high causing gradient explosion; reduce to a stable value to prevent divergence."
+      },
+      "safety": {
+        "verdict": "allow",
+        "risk_level": "low",
+        "prompt_injection_detected": false,
+        "concerns": [],
+        "reasoning": "No prompt injection detected; the proposed learning rate reduction is a standard corrective measure for gradient explosion and does not constitute an out\u2011of\u2011character or unusually risky change."
+      },
+      "policy": {
+        "allowed": true,
+        "violations": [],
+        "reason": "within policy"
+      },
+      "verification": null,
+      "note": null,
+      "created_at": 1792265160.8405252
+    },
+    {
+      "attempt_id": "run_6598a88598-a3",
+      "run_id": "run_6598a88598",
+      "n": 3,
+      "kind": "execute_verified",
+      "config": {
+        "lr": 0.1,
+        "batch_size": 64,
+        "epochs": 20,
+        "grad_clip": null,
+        "grad_accum": 1,
+        "hidden_size": 128,
+        "num_classes": 6,
+        "n_features": 20,
+        "n_samples": 4000,
+        "class_sep": 0.9,
+        "dataloader_workers": 0,
+        "seed": 0
+      },
+      "evidence": {
+        "succeeded": true,
+        "exit_code": 0,
+        "duration_s": 1.5198428630828857,
+        "stdout_tail": "[train] starting lr=0.1 batch_size=64 epochs=20 grad_clip=None grad_accum=1\n[train] epoch=0 train_loss=0.1749\n[train] epoch=1 train_loss=0.1049\n[train] epoch=2 train_loss=0.0820\n[train] epoch=3 train_loss=0.0712\n[train] epoch=4 train_loss=0.0644\n[train] epoch=5 train_loss=0.0598\n[train] epoch=6 train_loss=0.0564\n[train] epoch=7 train_loss=0.0538\n[train] epoch=8 train_loss=0.0520\n[train] epoch=9 train_loss=0.0507\n[train] epoch=10 train_loss=0.0485\n[train] epoch=11 train_loss=0.0490\n[train] epoch=12 train_loss=0.0461\n[train] epoch=13 train_loss=0.0461\n[train] epoch=14 train_loss=0.0441\n[train] epoch=15 train_loss=0.0437\n[train] epoch=16 train_loss=0.0424\n[train] epoch=17 train_loss=0.0415\n[train] epoch=18 train_loss=0.0407\n[train] epoch=19 train_loss=0.0400\n[train] done val_accuracy=0.9837\n[train] METRICS={\"status\": \"completed\", \"epochs_run\": 20, \"val_accuracy\": 0.9837, \"final_train_loss\": 0.04, \"lr\": 0.1}\n",
+        "stderr_tail": "",
+        "metrics": {
+          "status": "completed",
+          "epochs_run": 20,
+          "val_accuracy": 0.9837,
+          "final_train_loss": 0.04,
+          "lr": 0.1
+        },
+        "artifacts": {
+          "model.pt": "/Users/aditi/autoheal-cruseo/artifacts/run_6598a88598-a3/model.pt",
+          "metrics.json": "/Users/aditi/autoheal-cruseo/artifacts/run_6598a88598-a3/metrics.json",
+          "config.json": "/Users/aditi/autoheal-cruseo/artifacts/run_6598a88598-a3/config.json"
+        }
+      },
+      "diagnosis": null,
+      "proposal": null,
+      "safety": null,
+      "policy": null,
+      "verification": {
+        "passed": true,
+        "checks": [
+          {
+            "name": "training_process_success",
+            "passed": true,
+            "detail": "exit_code=0"
+          },
+          {
+            "name": "checkpoint_exists_and_loadable",
+            "passed": true,
+            "detail": "loaded /Users/aditi/autoheal-cruseo/artifacts/run_6598a88598-a3/model.pt"
+          },
+          {
+            "name": "validation_accuracy_threshold",
+            "passed": true,
+            "detail": "val_accuracy=0.9837 >= 0.9"
+          },
+          {
+            "name": "final_train_loss_threshold",
+            "passed": true,
+            "detail": "final_train_loss=0.04 <= 0.2"
+          }
+        ]
+      },
+      "note": null,
+      "created_at": 1792265162.860441
+    }
+  ]
+}
