@@ -12,63 +12,82 @@
 title: AutoHeal Recursive Healing Loop
 ---
 graph TB
-    Goal[One-line goal] --> DoD[Definition of Done<br/>reconciled vs trusted minimum]
-    DoD --> Exec[Execute workload]
-    Exec --> Ev[Observe real evidence<br/>exit code / logs / metrics]
+    Goal([One-line goal]) --> DoD[Definition of Done<br/>reconciled vs trusted minimum]
+    DoD --> Grant[/Authorization grant<br/>least-privilege · default-deny/]
+    Grant --> Exec[Execute workload]
+    Exec --> Ev[Observe real evidence<br/>exit code · logs · metrics]
     Ev --> Ok{Process<br/>succeeded?}
     Ok -->|no| Diag[Diagnose root cause]
     Ok -->|yes| Verify{Independent verify:<br/>goal actually done?}
-    Verify -->|yes| Done([Goal complete])
+    Verify -->|yes| Done([✓ Goal complete])
     Verify -->|no| Diag
     Diag --> Plan[Plan one bounded fix]
-    Plan --> Safety[Safety review<br/>advisory]
-    Safety --> Policy{Policy gate<br/>deterministic / binding}
-    Policy -->|reject| Replan[Record + replan]
+    Plan --> Safety[Safety review · advisory]
+    Safety --> Policy{Policy / authorization gate<br/>deterministic · default-deny}
+    Policy -->|reject + disclose limit| Replan[Record + replan]
     Replan --> Budget{Budget left?<br/>making progress?}
     Budget -->|yes| Diag
-    Budget -->|no| Esc([Escalate to human])
+    Budget -->|no| Esc([⚠ Escalate to human])
     Policy -->|allow| Apply[Apply fix + retry]
     Apply --> Exec
+
+    classDef agent fill:#fef3c7,stroke:#b45309,color:#111827;
+    classDef gate fill:#bbf7d0,stroke:#15803d,color:#111827;
+    classDef done fill:#86efac,stroke:#15803d,color:#111827;
+    classDef stop fill:#fecaca,stroke:#b91c1c,color:#111827;
+    class DoD,Diag,Plan,Safety agent;
+    class Grant,Verify,Policy gate;
+    class Done done;
+    class Esc stop;
 ```
 
 ### Components and trust boundaries
 
-Reasoning is advisory and runs on Crusoe/Nemotron; the binding decisions
-(what is allowed, whether the goal is done) are deterministic local code.
+Reasoning is advisory and runs on Crusoe/Nemotron (amber); the binding decisions
+— what is allowed, whether the goal is done — are deterministic local code
+(green). One agent loop drives both workload types.
 
 ```mermaid
 ---
 title: AutoHeal Components and Trust Boundaries
 ---
 graph TB
-    Sup[Recursive Supervisor<br/>owns goal / budgets / escalation]
+    Sup[Recursive Supervisor<br/>owns goal · budgets · escalation]
 
     subgraph reason["Reasoning agents — Crusoe/Nemotron · advisory"]
-        DoDA[Definition-of-Done agent]
+        DoDA[Definition-of-Done]
         DiagA[Diagnostician]
         PlanA[Remediation planner]
         SafeA[Safety reviewer]
     end
 
     subgraph det["Deterministic core — binding"]
-        Pol{Policy engine}
+        Pol{Policy / authorization gate<br/>least-privilege · default-deny}
         Ver{Independent verifier}
         Store[(SQLite trace)]
     end
 
-    subgraph work["Workload"]
-        Exe[Local executor]
-        Train[PyTorch training job]
+    subgraph work["Workloads — one agent loop drives both"]
+        Exe[Local executor<br/>workload-agnostic]
+        Train[PyTorch training]
+        Prep[Spark-style data prep]
     end
 
     Sup --> reason
-    Sup --> Pol
-    Sup --> Ver
-    Sup --> Exe
-    Exe --> Train
+    Sup --> Pol & Ver & Exe
+    Exe --> Train & Prep
     Pol -. gates .-> Exe
     Ver -. decides done .-> Sup
     Sup --> Store
+
+    classDef orch fill:#dbeafe,stroke:#1d4ed8,color:#111827;
+    classDef agent fill:#fef3c7,stroke:#b45309,color:#111827;
+    classDef core fill:#bbf7d0,stroke:#15803d,color:#111827;
+    classDef wl fill:#e5e7eb,stroke:#475569,color:#111827;
+    class Sup orch;
+    class DoDA,DiagA,PlanA,SafeA agent;
+    class Pol,Ver,Store core;
+    class Exe,Train,Prep wl;
 ```
 
 ## Separation of concerns
@@ -163,8 +182,14 @@ graph TB
     Ver -. feeds held-out eval .-> Learn
     Learn -. rewrites .-> Plan
 
-    classDef future stroke-dasharray:5 5;
-    class Opt,Learn,planned future;
+    classDef orch fill:#dbeafe,stroke:#1d4ed8,color:#111827;
+    classDef agent fill:#fef3c7,stroke:#b45309,color:#111827;
+    classDef core fill:#bbf7d0,stroke:#15803d,color:#111827;
+    classDef future fill:#f1f5f9,stroke:#94a3b8,color:#334155,stroke-dasharray:5 5;
+    class Sup orch;
+    class Diag,Plan agent;
+    class Ver core;
+    class Opt,Learn future;
 ```
 
 After a verified recovery, the **throughput optimizer** (Scenario D) would tune

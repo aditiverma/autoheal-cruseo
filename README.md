@@ -24,24 +24,36 @@ Definition-of-Done spec — not the agent — sets the bar.
 
 ```mermaid
 graph TB
-    Goal[One-line goal] --> DoD[Definition of Done<br/>reconciled vs trusted minimum]
-    DoD --> Exec[Execute workload]
-    Exec --> Ev[Observe real evidence]
+    Goal([One-line goal]) --> DoD[Definition of Done<br/>reconciled vs trusted minimum]
+    DoD --> Grant[/Authorization grant<br/>least-privilege · default-deny/]
+    Grant --> Exec[Execute workload]
+    Exec --> Ev[Observe real evidence<br/>exit code · logs · metrics]
     Ev --> Ok{Process<br/>succeeded?}
     Ok -->|no| Diag[Diagnose root cause]
     Ok -->|yes| Verify{Independent verify:<br/>goal actually done?}
-    Verify -->|yes| Done([Goal complete])
+    Verify -->|yes| Done([✓ Goal complete])
     Verify -->|no| Diag
     Diag --> Plan[Plan one bounded fix]
-    Plan --> Safety[Safety review<br/>advisory]
-    Safety --> Policy{Policy gate<br/>deterministic / binding}
-    Policy -->|reject| Replan[Record + replan]
+    Plan --> Safety[Safety review · advisory]
+    Safety --> Policy{Policy / authorization gate<br/>deterministic · default-deny}
+    Policy -->|reject + disclose limit| Replan[Record + replan]
     Replan --> Budget{Budget left?<br/>making progress?}
     Budget -->|yes| Diag
-    Budget -->|no| Esc([Escalate to human])
+    Budget -->|no| Esc([⚠ Escalate to human])
     Policy -->|allow| Apply[Apply fix + retry]
     Apply --> Exec
+
+    classDef agent fill:#fef3c7,stroke:#b45309,color:#111827;
+    classDef gate fill:#bbf7d0,stroke:#15803d,color:#111827;
+    classDef done fill:#86efac,stroke:#15803d,color:#111827;
+    classDef stop fill:#fecaca,stroke:#b91c1c,color:#111827;
+    class DoD,Diag,Plan,Safety agent;
+    class Grant,Verify,Policy gate;
+    class Done done;
+    class Esc stop;
 ```
+
+Amber = LLM reasoning (advisory). Green = deterministic gates (binding).
 
 This is **reason → act → observe → verify → re-plan**, not a fixed retry loop.
 The component and trust-boundary diagram is in [Architecture](#architecture) below.
@@ -136,34 +148,42 @@ deterministic local code.
 
 ```mermaid
 graph TB
-    Sup[Recursive Supervisor<br/>owns goal / budgets / escalation]
+    Sup[Recursive Supervisor<br/>owns goal · budgets · escalation]
 
     subgraph reason["Reasoning agents — Crusoe/Nemotron · advisory"]
-        DoDA[Definition-of-Done agent]
+        DoDA[Definition-of-Done]
         DiagA[Diagnostician]
         PlanA[Remediation planner]
         SafeA[Safety reviewer]
     end
 
     subgraph det["Deterministic core — binding"]
-        Pol{Policy engine}
+        Pol{Policy / authorization gate<br/>least-privilege · default-deny}
         Ver{Independent verifier}
         Store[(SQLite trace)]
     end
 
-    subgraph work["Workload"]
-        Exe[Local executor]
-        Train[PyTorch training job]
+    subgraph work["Workloads — one agent loop drives both"]
+        Exe[Local executor<br/>workload-agnostic]
+        Train[PyTorch training]
+        Prep[Spark-style data prep]
     end
 
     Sup --> reason
-    Sup --> Pol
-    Sup --> Ver
-    Sup --> Exe
-    Exe --> Train
+    Sup --> Pol & Ver & Exe
+    Exe --> Train & Prep
     Pol -. gates .-> Exe
     Ver -. decides done .-> Sup
     Sup --> Store
+
+    classDef orch fill:#dbeafe,stroke:#1d4ed8,color:#111827;
+    classDef agent fill:#fef3c7,stroke:#b45309,color:#111827;
+    classDef core fill:#bbf7d0,stroke:#15803d,color:#111827;
+    classDef wl fill:#e5e7eb,stroke:#475569,color:#111827;
+    class Sup orch;
+    class DoDA,DiagA,PlanA,SafeA agent;
+    class Pol,Ver,Store core;
+    class Exe,Train,Prep wl;
 ```
 
 See [`docs/architecture.md`](docs/architecture.md) for the full write-up.
@@ -222,7 +242,3 @@ interfaces.
 ## Demo video
 
 _Link added at submission._
-
-## License
-
-MIT — see [`LICENSE`](LICENSE).
