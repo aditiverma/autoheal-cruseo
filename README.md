@@ -5,7 +5,7 @@ successful execution and a completed goal.**
 
 **Crusoe Recursive Agents Hackathon** (NVIDIA · You.com) · **Primary track: Done
 Means Done** · solo project.
-📹 **1-minute demo:** _link added at submission._
+📹 **1-minute demo:** [Watch on YouTube](https://www.youtube.com/watch?v=bLHCxeH3xgY&t=1s)
 
 ML pipelines don't always fail with an exception. Sometimes training finishes
 successfully but produces a model that fails its quality requirements. Other
@@ -186,4 +186,4 @@ agent logic is structured so these slot in behind existing interfaces.
 
 ## Demo video
 
-_Link added at submission._
+[Watch the 1-minute demo on YouTube](https://www.youtube.com/watch?v=bLHCxeH3xgY&t=1s)

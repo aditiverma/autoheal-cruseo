@@ -1,0 +1,38 @@
+[2m(reasoning via crusoe, model=nvidia/NVIDIA-Nemotron-3-Super-120B-A12B)[0m
+
+[1m● AutoHeal run run_12ec893840[0m
+  goal: Prepare a validated training dataset from the raw input.
+
+[1m⛿ Agent authorization grant[0m (least-privilege, default-deny)
+    principal: autoheal-agent   namespace: team-ml
+    may propose: ['set_executor_memory', 'set_partitions']
+    quotas: {'executor_memory_mb': [256, 2048], 'n_partitions': [1, 256]}
+    [31mdenied (structurally impossible): ['delete resources', 'read secrets', 'modify its own policy/guardrails', 'act outside its namespace', 'escalate its own permissions'][0m
+
+[1m◆ acceptance criteria[0m (reconciled vs trusted minimum)
+    - rows_out_positive  [rows_out > 0.0]
+    - n_partitions_at_least_one  [n_partitions >= 1.0]
+    - peak_mem_within_limit  [peak_mem_mb <= 8192.0]
+    - data-prep process exits successfully
+    - processed dataset artifact exists
+    - processed dataset is loadable and non-empty
+
+[1m▶ Attempt 1: execute workload[0m
+    config: input_rows=200000 n_partitions=4 executor_memory_mb=512
+    evidence: [31mFAILED[0m (exit=1) metrics={'status': 'executor_oom', 'peak_mem_mb': 1229, 'executor_memory_mb': 512, 'n_partitions': 4, 'rows_out': 0}
+    [36m⚕ diagnosis:[0m EXECUTOR_OOM — Executor memory limit (512 MB) is insufficient for the per-partition working set (~1229 MB) caused by the current partitioning (4 partitions) and data volume. (conf=0.95)
+    [33m✎ proposal:[0m set_partitions n_partitions: 4 -> 10
+    [35m⛨ safety:[0m allow (risk=low, injection=False)
+    [1m⚖ policy: [32mALLOW[0m[0m 
+    [32m✓ plan approved; applying and retrying[0m
+
+[1m▶ Attempt 2: execute workload[0m
+    config: input_rows=200000 n_partitions=10 executor_memory_mb=512
+    evidence: [32msucceeded[0m (exit=0) metrics={'status': 'completed', 'rows_out': 200000, 'n_partitions': 10, 'peak_mem_mb': 492, 'features': 16}
+    [1m⊙ independent verification: [32mPASS[0m[0m
+      PASS rows_out_positive (rows_out=200000 > 0.0); PASS n_partitions_at_least_one (n_partitions=10 >= 1.0); PASS peak_mem_within_limit (peak_mem_mb=492 <= 8192.0); PASS data-prep process exits successfully (exit_code=0); PASS processed dataset artifact exists (dataset.npz in ['config.json', 'dataset.npz', 'metrics.json']); PASS processed dataset is loadable and non-empty (loaded 200000 rows x 16 features)
+
+[1;32m✅ GOAL COMPLETE[0m after 2 execution(s). run_id=run_12ec893840
+
+[2mtrace written to /Users/aditi/autoheal-cruseo/runs/run_12ec893840.json[0m
+[2mreplay with: python main.py trace run_12ec893840[0m
